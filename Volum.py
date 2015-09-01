@@ -34,9 +34,9 @@ def eq_button(x,y,picture):
     
 def draw_text(text,variable,x,y,size,color,font):
     if font == 1:
-        font_path = os.getcwd()+('/load/font.ttf')
-    if font == 2:
-        font_path = os.getcwd()+('/load/font2.ttf')
+        font_path = ('load/font.ttf')
+    else:
+        font_path = ('load/font2.ttf')
     font = pygame.font.Font(font_path,size)
     text = font.render((text + str(variable)), True, color)
     Display.blit(text, (x,y))
