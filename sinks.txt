@@ -1,3 +1,0 @@
->>> 3 sink(s) available.
-alsa.name = "HDMI 2"
-alsa.name = "ALC889 Analog"
