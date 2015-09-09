@@ -4,6 +4,7 @@ import sys
 import os
 import subprocess
 import find_sinks
+import time
 
 
 sink_list = find_sinks.sec()
@@ -71,11 +72,20 @@ def get_volume():
     output5 = output4.replace('[','')
     return int(output5)
 
+def switch_sink_inputs(new_default):
+    inputs_to_move = find_sinks.change_sink()
+    os.system("load/./set_default_sink.sh %s" % (new_default))
+    for inputs in inputs_to_move:
+        os.system("load/./switch_inputs.sh %s %s" % (inputs,new_default))
+    print ('Switched: ', inputs_to_move,' to sink ', new_default)
+
 
 def main_loop():
     global volume
     global sink
     global sink_list
+    inputs = find_sinks.change_sink()
+    print ('Inputs: ', inputs)
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
     check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
     sink_count = len(sink_list)
@@ -105,32 +115,37 @@ def main_loop():
                     redraw = True
                 if event.key == pygame.K_1:
                     if sink_count > 0:
-                        print ("Switched to sink 0")
+                        print ("Default sink set to 0")
                         sink = 0
+                        switch_sink_inputs(sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_2:
                     if sink_count > 1:
-                        print ("Switched to sink 1")
+                        print ("Default sink set to 1")
                         sink = 1
+                        switch_sink_inputs(sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_3:
                     if sink_count > 2:
-                        print ("Switched to sink 2")
+                        print ("Default sink set to 2")
                         sink = 2
+                        switch_sink_inputs(sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_4:
                     if sink_count > 3:
-                        print ("Switched to sink 3")
+                        print ("Default sink set to 3")
                         sink = 3
+                        switch_sink_inputs(sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_5:
                     if sink_count > 4:
-                        print ("Switched to sink 4")
+                        print ("Default sink set to 4")
                         sink = 4
+                        switch_sink_inputs(sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:

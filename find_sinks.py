@@ -3,7 +3,7 @@ import os
 
 
 path = os.getcwd()+'/'
-os.system("load/./devices.sh %s" % (path+('/sinks.txt')))
+os.system("load/./devices.sh %s" % (path+('load/sinks.txt')))
 
 def readf(filename):
     file = path+filename
@@ -16,14 +16,13 @@ def readf(filename):
 def editf(a):
     count = 0
     newlist = []
-    newlist.append(a[1])
     for lines in a:
         b = lines.find('alsa.name')
         if b is not -1:
             newlist.append(a[count])
         count+=1
-    count = 1
-    for lines in newlist[1:]:
+    count = 0
+    for lines in newlist:
         b = lines.find('alsa')
         lines = lines[b:]
         newlist[count] = lines
@@ -44,6 +43,14 @@ def edit_settings(text,text_find,new_value):
     count = 1
     return newlist
 
+def edit_inputs_file(text):
+    newlist = []
+    for lines in text:
+        b = lines.find('index:')
+        if b is not -1:
+            newlist.append(lines[b+7:])
+    return newlist
+
 def get_settings(text,text_find):
     for lines in text:
         b = lines.find(text_find)
@@ -57,13 +64,13 @@ def savef(text,file):
     f.close()
 
 def main():
-    a = readf('sinks.txt')
+    a = readf('load/sinks.txt')
     a = editf(a)
     text = a = '\n'.join(str(e) for e in a)
-    savef(text,'sinks.txt')
+    savef(text,'load/sinks.txt')
 
 def sec():
-    text = readf('sinks.txt')
+    text = readf('load/sinks.txt')
     sinklist = []
     for lines in text:
         b = lines.find('=')
@@ -72,14 +79,22 @@ def sec():
             sinklist.append(c)
     return sinklist
 
+def change_sink():
+    os.system("load/./get_inputs.sh")
+    text = readf('load/inputs.txt')
+    text = edit_inputs_file(text)
+##    text = a = '\n'.join(str(e) for e in a)
+##    savef(text,'load/inputs.txt')
+    return text
+
 def write_settings(text_find,new_value):
-    a = readf('settings')
+    a = readf('load/settings')
     a = edit_settings(a,text_find,new_value)
     text = a = '\n'.join(str(e) for e in a)
-    savef(text,'settings')
+    savef(text,'load/settings')
 
 def read_settings(text_find):
-    a = readf('settings')
+    a = readf('load/settings')
     a = get_settings(a,text_find)
     return a
 

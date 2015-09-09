@@ -1,4 +1,4 @@
-## Source http://www.webupd8.org/2013/03/install-pulseaudio-with-built-in-system.html]
+## Source http://www.webupd8.org/2013/03/install-pulseaudio-with-built-in-system.html
 
 
 wget http://cgit.freedesktop.org/pulseaudio/pulseaudio/plain/src/utils/qpaeq -O /tmp/qpaeq
