@@ -26,6 +26,7 @@ black = (0,0,0)
 dark = (35,35,35)
 blue = (80,80,150)
 green = (0,255,0)
+blgr = (54,87,99)
 
 volume = 50
 
@@ -76,6 +77,7 @@ def main_loop():
     global sink
     global sink_list
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
+    check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
     sink_count = len(sink_list)
     redraw = True
     eq_hov = False
