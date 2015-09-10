@@ -1,11 +1,14 @@
-## Default pulseaudio index
+## Always have a space before and after the "=" sign, or you'll crash
 
-default_sink = 0
+## Default pulseaudio index
+default_sink = 1
 
 ## Window size in pixels
 X_window_size = 500
 Y_window_size = 300
 
 ## A higher value makes the UI more responsive, a lower value makes the audio volume change faster
-
 timer = 4
+
+## Move all audio programs to the new default sink when it is changed or not, 1/0
+m_inputs = 1

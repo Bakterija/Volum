@@ -27,6 +27,12 @@ def editf(a):
         lines = lines[b:]
         newlist[count] = lines
         count+=1
+    count = 0
+    for lines in a:
+        b = lines.find('FFT based equalizer')
+        if b is not -1:
+            newlist.append('alsa.name = "FFT equalizer"')
+        count+=1
     return newlist
 
 def edit_settings(text,text_find,new_value):
