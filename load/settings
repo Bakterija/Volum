@@ -1,4 +1,4 @@
-## Always have a space before and after the "=" sign, or you'll crash
+### Always have a space before and after the "=" sign, or you'll crash
 
 ## Default pulseaudio index
 default_sink = 0
