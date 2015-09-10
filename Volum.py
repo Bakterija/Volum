@@ -4,7 +4,6 @@ import sys
 import os
 import subprocess
 import find_sinks
-import time
 
 
 sink_list = find_sinks.sec()
@@ -46,19 +45,21 @@ def draw_text(text,variable,x,y,size,color,font):
 def draw_bar(bar_x, bar_y, bar_w, bar_h, color):  
     pygame.draw.rect(Display, color, [bar_x, bar_y, bar_w, bar_h])
 
-def higher():
+def higher(timer):
     global volume
     volume+=5
-    sys_arg_volum(volume)
+    if timer == False:
+        sys_arg_volum(volume)
 
-def lower():
+def lower(timer):
     global volume
     volume-=5
-    sys_arg_volum(volume)
+    if timer == False:
+        sys_arg_volum(volume)
 
 def sys_arg_volum(volume):
     global sink
-    os.system("load/./arg_pactl.sh %s %s" % (sink, volume))
+    subprocess.call('pactl set-sink-volume %s %s' % (sink, volume)+("%"), shell=True)
 
 def equalizer():
     os.system("load/./equalizer.sh")
@@ -92,26 +93,29 @@ def main_loop():
     redraw = True
     eq_hov = False
     eq_draw = eq_pic
+    volume_timer = -9001
     while True:
+        if volume_timer > 0:
+            volume_timer -= 1
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
-            
+                
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_d and volume<150:
-                    higher()
+                    higher(False)
                     redraw = True
                 if event.key == pygame.K_a and volume>0:
-                    lower()
+                    lower(False)
                     redraw = True
                 if event.key == pygame.K_RIGHT and volume<150:
-                    higher()
+                    higher(False)
                     redraw = True     
                 if event.key == pygame.K_LEFT and volume>0:
-                    lower()
+                    lower(False)
                     redraw = True
                 if event.key == pygame.K_1:
                     if sink_count > 0:
@@ -150,10 +154,12 @@ def main_loop():
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4 and volume<150:
-                    higher()
+                    higher(True)
+                    volume_timer = 4
                     redraw = True
                 if event.button == 5 and volume>0:
-                    lower()
+                    lower(True)
+                    volume_timer = 4
                     redraw = True
                 elif event.button == 1:
                     if check_equalizer == True:
@@ -176,7 +182,10 @@ def main_loop():
                 redraw = True
                 eq_hov = False
                   
-        
+        if volume_timer == 0:
+            volume_timer -= 9001
+            sys_arg_volum(volume)
+                    
         if redraw == True:
             Display.fill(grey)
 
