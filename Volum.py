@@ -1,17 +1,40 @@
 #!/usr/bin/env python
 import pygame, sys, os, subprocess, find_sinks
+def reset_sinks():
+    global sink_list_index, sink_list, sink_count
+    find_sinks.main()
+    sink_list = find_sinks.sec()
+    print ('Available sinks: ', sink_list)
+    sink_count = int(len(sink_list) / 2)
+    sink_list_index = sink_list[sink_count:]
+    sink_list = sink_list[:sink_count]
 
+def find_sink_index(sink_list_index):
+    count = 0
+    found = False
+    for sinks in sink_list_index:
+        b = sinks.find(str(sink))
+        if b is not -1:
+            found = True
+            return count
+        count+=1
+    if found == False:
+        print ("WARNING: Couldn't find the saved sink, switching to sink 0")
+        global sink
+        sink = 0
+        find_sinks.write_settings('default_sink',sink)
+        return 0
 
 pygame.init()
-sink_list = find_sinks.sec()
-sink = find_sinks.read_settings('default_sink = ')
+sink = int(find_sinks.read_settings('default_sink = '))
 scx = int(find_sinks.read_settings('X_window_size = '))
 scy = int(find_sinks.read_settings('Y_window_size = '))
 Display = pygame.display.set_mode((scx,scy))
 print ('-------------------- Loading ------------------------')
 print ('Surface size is: ', scx,'x', scy)
-print ('Available sinks: ', sink_list)
-print ('Default sink: ', sink_list[int(sink)])
+reset_sinks()
+sink_index = int(find_sink_index(sink_list_index))
+print ('Default sink: ', sink_list[sink_index])
 pygame.display.set_caption('Volum')
 icon = pygame.image.load('load/volum.png')
 eq_pic = pygame.image.load('load/eqpic.png')
@@ -73,24 +96,25 @@ def get_volume():
     output5 = output4.replace('[','')
     return int(output5)
 
-def switch_sink_inputs(new_default):
+def switch_sink_inputs(count,new_default):
+    new_default = int(new_default)
     inputs_to_move = find_sinks.change_sink()
     os.system("load/./set_default_sink.sh %s" % (new_default))
     for inputs in inputs_to_move:
         os.system("load/./switch_inputs.sh %s %s" % (inputs,new_default))
-    print ('Switched: ', inputs_to_move,' to ', sink_list[new_default])
+    print ('Switched: ', inputs_to_move,' to ', sink_list[count])
 
-
+        
 def main_loop():
-    global volume, volume_timer, reset_timer, sink, sink_list, screen_x, screen_y
+    global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
+    sink_index = int(find_sink_index(sink_list_index))
     if reset_timer < 0:
         reset_timer = 0
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
     if check_equalizer == False:
         check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
-    sink_count = len(sink_list)
     inputs = find_sinks.change_sink()
     print ('Inputs: ', inputs)
     print ('Moving inputs: ', moving_inputs)
@@ -138,42 +162,47 @@ def main_loop():
                     redraw = True
                 if event.key == pygame.K_1:
                     if sink_count > 0:
-                        print ("Default sink set to 0")
-                        sink = 0
+                        print ("Default sink set to ",sink_list_index[0])
+                        sink = sink_list_index[0]
+                        sink_index = 0
                         if moving_inputs == True:
-                            switch_sink_inputs(sink)
+                            switch_sink_inputs(0,sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_2:
                     if sink_count > 1:
-                        print ("Default sink set to 1")
-                        sink = 1
+                        print ("Default sink set to ",sink_list_index[1])
+                        sink = sink_list_index[1]
+                        sink_index = 1
                         if moving_inputs == True:
-                            switch_sink_inputs(sink)
+                            switch_sink_inputs(1,sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_3:
                     if sink_count > 2:
-                        print ("Default sink set to 2")
-                        sink = 2
+                        print ("Default sink set to ",sink_list_index[2])
+                        sink = sink_list_index[2]
+                        sink_index = 2
                         if moving_inputs == True:
-                            switch_sink_inputs(sink)
+                            switch_sink_inputs(2,sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_4:
                     if sink_count > 3:
-                        print ("Default sink set to 3")
-                        sink = 3
+                        print ("Default sink set to ",sink_list_index[3])
+                        sink = sink_list_index[3]
+                        sink_index = 3
                         if moving_inputs == True:
-                            switch_sink_inputs(sink)
+                            switch_sink_inputs(3,sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
                 if event.key == pygame.K_5:
                     if sink_count > 4:
-                        print ("Default sink set to 4")
-                        sink = 4
+                        print ("Default sink set to ",sink_list_index[4])
+                        sink = sink_list_index[4]
+                        sink_index = 4
                         if moving_inputs == True:
-                            switch_sink_inputs(sink)
+                            switch_sink_inputs(4,sink)
                         find_sinks.write_settings('default_sink',sink)
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -189,6 +218,9 @@ def main_loop():
                             if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
                                 equalizer()
                                 redraw = True
+                    if mouse_pos[0] < scx/3.57 and mouse_pos[0] > scx/12.5:
+                            if mouse_pos[1] < scy/3 and mouse_pos[1] > scy/3.75+4:
+                                reset_sinks()
 
         
         if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
@@ -228,9 +260,9 @@ def main_loop():
                 draw_bar(scx/12.5+100*scx/178.571,scy/7.5,(volume-100)*scx/178.571,scy/10,blue)
             draw_text('',volume,scx/12.5+5,scy/7.5+2,22,white,1)
             if moving_inputs == True:
-                draw_text('Sink: ',sink_list[int(sink)],scx/12.5+2,scy/3.75+2,18,black,2)
+                draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,black,2)
             else:
-                draw_text('Sink: ',sink_list[int(sink)],scx/12.5+2,scy/3.75+2,18,dark_red,2)
+                draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,dark_red,2)
             
             if check_equalizer == True:
                 draw_picture(scx/12.5,scy/1.5,eq_draw)

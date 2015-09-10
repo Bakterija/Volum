@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import os
-
-
 path = os.getcwd()+'/'
-os.system("load/./devices.sh %s" % (path+('load/sinks.txt')))
+
+def output_sinks():
+    os.system("load/./devices.sh %s" % (path+('load/sinks.txt')))
 
 def readf(filename):
     file = path+filename
@@ -20,6 +20,10 @@ def editf(a):
         b = lines.find('alsa.name')
         if b is not -1:
             newlist.append(a[count])
+        else:
+            b = lines.find('FFT based equalizer')
+            if b is not -1:
+                newlist.append('alsa.name = "FFT equalizer"')
         count+=1
     count = 0
     for lines in newlist:
@@ -29,9 +33,9 @@ def editf(a):
         count+=1
     count = 0
     for lines in a:
-        b = lines.find('FFT based equalizer')
+        b = lines.find('index:')
         if b is not -1:
-            newlist.append('alsa.name = "FFT equalizer"')
+            newlist.append('index = "' + lines[b+7:] + '"')
         count+=1
     return newlist
 
@@ -70,6 +74,7 @@ def savef(text,file):
     f.close()
 
 def main():
+    output_sinks()
     a = readf('load/sinks.txt')
     a = editf(a)
     text = a = '\n'.join(str(e) for e in a)
