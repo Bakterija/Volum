@@ -1,6 +1,6 @@
 ## Default pulseaudio index
 
-default_sink = 1
+default_sink = 0
 
 ## Window size in pixels
 X_window_size = 500

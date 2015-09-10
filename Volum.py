@@ -13,6 +13,8 @@ pygame.display.set_caption('Volum')
 icon = pygame.image.load('load/volum.png')
 eq_pic = pygame.image.load('load/eqpic.png')
 eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
+##options_pic = pygame.image.load('load/optionspic.png')
+##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
 pygame.display.set_icon(icon)
 
@@ -81,7 +83,8 @@ def main_loop():
     if reset_timer < 0:
         reset_timer = 0
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
-    check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
+    if check_equalizer == False:
+        check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
     sink_count = len(sink_list)
     inputs = find_sinks.change_sink()
     print ('Inputs: ', inputs)
