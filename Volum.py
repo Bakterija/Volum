@@ -1,17 +1,14 @@
 #!/usr/bin/env python
-import pygame
-import sys
-import os
-import subprocess
-import find_sinks
+import pygame, sys, os, subprocess, find_sinks
 
-
+pygame.init()
 sink_list = find_sinks.sec()
 sink = find_sinks.read_settings('default_sink = ')
+scx = int(find_sinks.read_settings('X_window_size = '))
+scy = int(find_sinks.read_settings('Y_window_size = '))
+Display = pygame.display.set_mode((scx,scy))
 print (sink_list)
 print ('Default sink: ', sink)
-pygame.init()
-Display = pygame.display.set_mode((500,300))
 pygame.display.set_caption('Volum')
 icon = pygame.image.load('load/volum.png')
 eq_pic = pygame.image.load('load/eqpic.png')
@@ -26,11 +23,10 @@ black = (0,0,0)
 dark = (35,35,35)
 blue = (80,80,150)
 green = (0,255,0)
-blgr = (54,87,99)
+blgr = (34,67,79)
 
-volume = 50
 
-def eq_button(x,y,picture):
+def draw_picture(x,y,picture):
     Display.blit(picture,(x,y))
     
 def draw_text(text,variable,x,y,size,color,font):
@@ -45,17 +41,15 @@ def draw_text(text,variable,x,y,size,color,font):
 def draw_bar(bar_x, bar_y, bar_w, bar_h, color):  
     pygame.draw.rect(Display, color, [bar_x, bar_y, bar_w, bar_h])
 
-def higher(timer):
-    global volume
+def higher():
+    global volume, volume_timer, reset_timer
     volume+=5
-    if timer == False:
-        sys_arg_volum(volume)
+    volume_timer = reset_timer
 
-def lower(timer):
-    global volume
+def lower():
+    global volume, volume_timer, reset_timer
     volume-=5
-    if timer == False:
-        sys_arg_volum(volume)
+    volume_timer = reset_timer
 
 def sys_arg_volum(volume):
     global sink
@@ -82,18 +76,22 @@ def switch_sink_inputs(new_default):
 
 
 def main_loop():
-    global volume
-    global sink
-    global sink_list
-    inputs = find_sinks.change_sink()
-    print ('Inputs: ', inputs)
+    global volume, volume_timer, reset_timer, sink, sink_list, screen_x, screen_y
+    reset_timer = int(find_sinks.read_settings('timer = '))
+    if reset_timer < 0:
+        reset_timer = 0
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
     check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
     sink_count = len(sink_list)
+    inputs = find_sinks.change_sink()
+    print ('Inputs: ', inputs)
     redraw = True
     eq_hov = False
     eq_draw = eq_pic
+##    options_hov = False
+##    options_draw = options_pic
     volume_timer = -9001
+    volume = 50
     while True:
         if volume_timer > 0:
             volume_timer -= 1
@@ -106,16 +104,16 @@ def main_loop():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_d and volume<150:
-                    higher(False)
+                    higher()
                     redraw = True
                 if event.key == pygame.K_a and volume>0:
-                    lower(False)
+                    lower()
                     redraw = True
                 if event.key == pygame.K_RIGHT and volume<150:
-                    higher(False)
+                    higher()
                     redraw = True     
                 if event.key == pygame.K_LEFT and volume>0:
-                    lower(False)
+                    lower()
                     redraw = True
                 if event.key == pygame.K_1:
                     if sink_count > 0:
@@ -154,33 +152,40 @@ def main_loop():
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4 and volume<150:
-                    higher(True)
-                    volume_timer = 4
+                    higher()
                     redraw = True
                 if event.button == 5 and volume>0:
-                    lower(True)
-                    volume_timer = 4
+                    lower()
                     redraw = True
                 elif event.button == 1:
                     if check_equalizer == True:
-                        if mouse_pos[0] < 40+64 and mouse_pos[0] > 40:
-                            if mouse_pos[1] < 200+64 and mouse_pos[1] > 200:
+                        if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
+                            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
                                 equalizer()
                                 redraw = True
 
         
-        if mouse_pos[0] < 40+64 and mouse_pos[0] > 40:
-            if mouse_pos[1] < 200+64 and mouse_pos[1] > 200:
+        if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
+            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
                 eq_draw = eq_pic_hov
                 redraw = True
                 eq_hov = True
+##        if mouse_pos[0] < scx/4.16+64 and mouse_pos[0] > scx/4.16:
+##            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
+##                options_draw = options_pic_hov
+##                redraw = True
+##                options_hov = True                
 
-                
         if eq_hov == True:
-            if mouse_pos[0] > 40+48 or mouse_pos[0] < 40 or mouse_pos[1] > 200+48 or mouse_pos[1] < 200:
+            if mouse_pos[0] > scx/12.5+48 or mouse_pos[0] < scx/12.5 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
                 eq_draw = eq_pic
                 redraw = True
                 eq_hov = False
+##        if options_hov == True:
+##            if mouse_pos[0] > scx/4.16+48 or mouse_pos[0] < scx/4.16 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
+##                options_draw = options_pic
+##                redraw = True
+##                options_hov = False
                   
         if volume_timer == 0:
             volume_timer -= 9001
@@ -189,17 +194,18 @@ def main_loop():
         if redraw == True:
             Display.fill(grey)
 
-            draw_bar(38,38,150*2.8+4,34,black)
+            draw_bar(scx/12.5-2,scy/7.5-2,150*scx/178.571+4,scy/10+4,black)
             if volume <105:
-                draw_bar(40,40,volume*2.8,30,red)
+                draw_bar(scx/12.5,scy/7.5,volume*scx/178.571,scy/10,red)
             if volume > 100:
-                draw_bar(40,40,100*2.8,30,red)
-                draw_bar(40+100*2.8,40,(volume-100)*2.8,30,blue)
-            draw_text('',volume,45,42,22,white,1)
-            draw_text('Sink: ',sink_list[int(sink)],42,82,18,black,2)
+                draw_bar(scx/12.5,scy/7.5,100*scx/178.571,scy/10,red)
+                draw_bar(scx/12.5+100*scx/178.571,scy/7.5,(volume-100)*scx/178.571,scy/10,blue)
+            draw_text('',volume,scx/12.5+5,scy/7.5+2,22,white,1)
+            draw_text('Sink: ',sink_list[int(sink)],scx/12.5+2,scy/3.75+2,18,black,2)
             
             if check_equalizer == True:
-                eq_button(40,200,eq_draw)
+                draw_picture(scx/12.5,scy/1.5,eq_draw)
+##            draw_picture(scx/4.16,scy/1.5,options_draw)
                     
             pygame.display.update()
             redraw = False

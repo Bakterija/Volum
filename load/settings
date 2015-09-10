@@ -1,1 +1,11 @@
-default_sink = 0
+## Default pulseaudio index
+
+default_sink = 1
+
+## Window size in pixels
+X_window_size = 500
+Y_window_size = 300
+
+## A higher value makes the UI more responsive, a lower value makes the audio volume change faster
+
+timer = 4
