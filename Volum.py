@@ -26,6 +26,9 @@ def find_sink_index(sink_list_index):
         return 0
 
 pygame.init()
+pygame.display.set_caption('Volum')
+icon = pygame.image.load('load/volum.png')
+pygame.display.set_icon(icon)
 sink = int(find_sinks.read_settings('default_sink = '))
 scx = int(find_sinks.read_settings('X_window_size = '))
 scy = int(find_sinks.read_settings('Y_window_size = '))
@@ -35,14 +38,12 @@ print ('Surface size is: ', scx,'x', scy)
 reset_sinks()
 sink_index = int(find_sink_index(sink_list_index))
 print ('Default sink: ', sink_list[sink_index])
-pygame.display.set_caption('Volum')
-icon = pygame.image.load('load/volum.png')
 eq_pic = pygame.image.load('load/eqpic.png')
 eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
 ##options_pic = pygame.image.load('load/optionspic.png')
 ##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
-pygame.display.set_icon(icon)
+volume = 50
 
 white = (255,255,255)
 grey = (235,235,235)
@@ -101,15 +102,39 @@ def switch_sink_inputs(count,new_default):
     inputs_to_move = find_sinks.change_sink()
     os.system("load/./set_default_sink.sh %s" % (new_default))
     for inputs in inputs_to_move:
-        os.system("load/./switch_inputs.sh %s %s" % (inputs,new_default))
+        os.system("load/./switch_inputs.sh %s %s" % (inputs[0],new_default))
     print ('Switched: ', inputs_to_move,' to ', sink_list[count])
 
+def reset_inputs_list():
+    input_list = find_sinks.change_sink()
+    text_list = []
+    bar_list = []
+    bar_list2 = []
+    offset = 0
+    for inputs in input_list:
+        offsetx = 0
+        if len(inputs[1]) > 15:
+            inputs[1] = inputs[1][:15] + '..'
+        text_list.append(['',inputs[1],40,40+offset,16,black,2])
+        bar_list.append([199,39+offset,100*1.5+2,15+2,black])
+        bar_list2.append([200,40+offset,inputs[2]*1.5,15,red,0])
+        for sinks in sink_list:
+            text_list.append(['','IR',400+offsetx,40+offset,16,black,2])
+            offsetx+=15
+        offset += 30
+##    print (input_list)
+    return input_list, text_list, bar_list, bar_list2
+
+def set_input_volume(index,volume):
+    volume = volume*655
+    os.popen('pacmd set-sink-input-volume %s %s' % (index, volume))
         
 def main_loop():
     global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
     sink_index = int(find_sink_index(sink_list_index))
+    mouse_pos = pygame.mouse.get_pos()
     if reset_timer < 0:
         reset_timer = 0
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
@@ -125,7 +150,6 @@ def main_loop():
 ##    options_hov = False
 ##    options_draw = options_pic
     volume_timer = -9001
-    volume = 50
     while True:
         if volume_timer > 0:
             volume_timer -= 1
@@ -149,6 +173,8 @@ def main_loop():
                 if event.key == pygame.K_LEFT and volume>0:
                     lower()
                     redraw = True
+                if event.key == pygame.K_F2:
+                    program_loop()
                 if event.key == pygame.K_e:
                     stop = False
                     if moving_inputs == 0:
@@ -273,6 +299,82 @@ def main_loop():
             
         clock.tick(60)
 
+def program_loop():
+    global volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
+    print (sink_list,sink_list_index)
+    input_list, text_list, bar_list,bar_list2 = reset_inputs_list()
+    bar2 = 100*1.5
+    redraw = True
+    while True:
+            
+        for event in pygame.event.get():
+            mouse_pos = pygame.mouse.get_pos()
+                
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F1:
+                    main_loop()
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:
+                    count = 0
+                    for bar in bar_list2:
+                        if input_list[count][2] < 100:
+                            if bar[5] == 1:
+                                input_list[count][2] += 5
+                                if input_list[count][2] > 100:
+                                    input_list[count][2] = 100
+                                bar[2] = input_list[count][2]*1.5
+                                set_input_volume(input_list[count][0],input_list[count][2])
+                        count += 1
+                        redraw = True
+                if event.button == 5:
+                    count = 0
+                    for bar in bar_list2:
+                        if input_list[count][2] > 0:
+                            if bar[5] == 1:
+                                input_list[count][2] -= 5
+                                if input_list[count][2] < 0:
+                                    input_list[count][2] = 0
+                                bar[2] = input_list[count][2]*1.5
+                                set_input_volume(input_list[count][0],input_list[count][2])
+                        count += 1
+                        redraw = True
+##                elif event.button == 1:
+                            
+
+            for bar in bar_list2:
+                if mouse_pos[0] < bar[0]+bar2 and mouse_pos[0] > bar[0]:
+                    if mouse_pos[1] < bar[1] + bar[3] and mouse_pos[1] > bar[1]:
+                        bar[5] = 1
+                        redraw = True
+            for bar in bar_list2:
+                if bar[5] > 0:
+                    if mouse_pos[0] > bar[0]+bar2 or mouse_pos[0] < bar[0] or mouse_pos[1] > bar[1] + bar[3] or mouse_pos[1] < bar[1]:
+                        bar[5] = 0
+                        redraw = True
+        if redraw == True:            
+            Display.fill(grey)
+
+            for text in text_list:
+                draw_text(text[0],text[1],text[2],text[3],text[4],text[5],text[6])
+            for bar in bar_list:
+                    draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+            for bar in bar_list2:
+                if bar[5] == 0:
+                    draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+                else:
+                    draw_bar(bar[0],bar[1],bar[2],bar[3],blue)
+            redraw = False
+            
+                    
+            pygame.display.update()
+            
+        clock.tick(60)
+        
 main_loop()
 pygame.quit()
 quit()

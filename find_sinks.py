@@ -54,11 +54,30 @@ def edit_settings(text,text_find,new_value):
     return newlist
 
 def edit_inputs_file(text):
+    app_index = []
+    app_name = []
+    app_volume = []
     newlist = []
     for lines in text:
         b = lines.find('index:')
         if b is not -1:
-            newlist.append(lines[b+7:])
+            app_index.append(lines[b+7:])
+    for lines in text:
+        b = lines.find('media.name')
+        if b is not -1:
+            app_name.append(lines[b+14:-1])
+    for lines in text:
+        b = lines.find('volume: 0: ')
+        if b is not -1:
+            if lines[12:15] == 100:
+                app_volume.append(lines[12:16])
+            else:
+                app_volume.append(lines[12:15])
+    listlen = len(app_index)
+    count = 0
+    while count < listlen:
+        newlist.append([app_index[count],app_name[count],int(app_volume[count])])
+        count += 1
     return newlist
 
 def get_settings(text,text_find):

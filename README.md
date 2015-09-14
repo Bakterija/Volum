@@ -17,3 +17,5 @@ Control volume with mousewheel, "left" and "right" arrows or "A" and "D".
 Change default audio device with number buttons.
 
 Switch between moving all audio sources to the default audio device or just volume control with "E"
+
+Use "F1" and "F2" hotkeys to switch between adjusting global and program volume
