@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import pygame, sys, os, subprocess, find_sinks
+import pygame, sys, os, find_sinks
 def reset_sinks():
     global sink_list_index, sink_list, sink_count
     find_sinks.main()
@@ -84,19 +84,11 @@ def lower():
 
 def sys_arg_volum(volume):
     global sink
-    subprocess.call('pactl set-sink-volume %s %s' % (sink, volume)+("%"), shell=True)
+    volume = volume*655
+    os.popen('pacmd set-sink-volume %s %s' % (sink, volume))
 
 def equalizer():
-    os.system("load/./equalizer.sh")
-
-def get_volume():
-    komanda = subprocess.Popen(["amixer"], stdout=subprocess.PIPE)
-    output = komanda.communicate()[0]
-    output2 = output.decode('utf-8')
-    output3 = output2.find('%')
-    output4 = output2[output3-3:output3]
-    output5 = output4.replace('[','')
-    return int(output5)
+    os.system("qpaeq")
 
 def switch_sink_inputs(count,new_default):
     new_default = int(new_default)
