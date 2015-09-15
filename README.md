@@ -1,6 +1,6 @@
 # A simple pulseaudio GUI with qpaeq equalizer
 ![Tab1.](https://github.com/Bakterija/Volum/tree/master/load/screenshot.png)
-![Tab2.](https://github.com/Bakterija/Volum/tree/master/load/screenshot.png)
+![Tab2.](https://github.com/Bakterija/Volum/tree/master/load/screenshot2.png)
 Requires python, pygame and pavucontrol
 
 ## Tested on Debian and Linux Mint
