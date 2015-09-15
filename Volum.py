@@ -108,7 +108,8 @@ def switch_sink_inputs(count,new_default):
 
 def switch_sink_input(inputs,new_default):
     new_default = int(new_default)
-    os.system("load/./switch_inputs.sh %s %s" % (inputs,new_default))
+    print (new_default)
+    os.system("load/./switch_inputs.sh %s %s" % (inputs,sink_list_index[new_default]))
     print ('Switched: ', inputs,' to ', new_default)
 
 def reset_inputs_list():
@@ -133,7 +134,7 @@ def reset_inputs_list():
     offset, offsetx, count = 0, 0, 0
     for inputs in input_list:
         for sinks in sink_list:
-            if inputs[3] == count:
+            if int(inputs[3]) == int(sink_list_index[count]):
                 bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],inputs[3]])
             else:
                 bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],-1])
@@ -141,6 +142,7 @@ def reset_inputs_list():
             offsetx += 25
         offset += 30
         offsetx, count = 0, 0
+##    print (input_list)
     return input_list, text_list, bar_list, bar_list2, bar_list3
 
 def set_input_volume(index,volume):
