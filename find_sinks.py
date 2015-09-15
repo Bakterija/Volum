@@ -57,6 +57,7 @@ def edit_inputs_file(text):
     app_index = []
     app_name = []
     app_volume = []
+    app_sink_index = []
     newlist = []
     for lines in text:
         b = lines.find('index:')
@@ -73,11 +74,23 @@ def edit_inputs_file(text):
                 app_volume.append(lines[12:16])
             else:
                 app_volume.append(lines[12:15])
+    for lines in text:
+        b = lines.find('sink: ')
+        if b is not -1:
+            app_sink_index.append(lines[7])
     listlen = len(app_index)
     count = 0
     while count < listlen:
-        newlist.append([app_index[count],app_name[count],int(app_volume[count])])
+        b = app_name[count].find('Equalized Stream')
+        if b is -1:
+            newlist.append([app_index[count],app_name[count],int(app_volume[count]),int(app_sink_index[count])])
         count += 1
+    count = 0
+    for lines in text:
+        b = lines.find('application.name = ')
+        if b is not -1:
+            newlist[count].append(lines[22:-1])
+            count += 1
     return newlist
 
 def get_settings(text,text_find):

@@ -1,7 +1,7 @@
 ### Always have a space before and after the "=" sign, or you'll crash
 
 ## Default pulseaudio index
-default_sink = 0
+default_sink = 2
 
 ## Window size in pixels
 X_window_size = 500
