@@ -1,13 +1,16 @@
 #!/usr/bin/env python
-import pygame, sys, os, find_sinks
+import pygame, os, find_sinks
 def reset_sinks():
-    global sink_list_index, sink_list, sink_count
+    global sink_list_index, sink_list, sink_count, sink_list_volume
     find_sinks.main()
     sink_list = find_sinks.sec()
     print ('Available sinks: ', sink_list)
-    sink_count = int(len(sink_list) / 2)
-    sink_list_index = sink_list[sink_count:]
+    sink_count = int(len(sink_list) / 3)
+    sink_list_index = sink_list[sink_count:-sink_count]
+    sink_list_volume = sink_list[sink_count*2:]
     sink_list = sink_list[:sink_count]
+    sink_list_volume = sink_list_index + sink_list_volume
+    print (sink_list_volume)
 
 def find_sink_index(sink_list_index):
     count = 0
@@ -43,7 +46,14 @@ eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
 ##options_pic = pygame.image.load('load/optionspic.png')
 ##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
+count = 0
 volume = 50
+for numbers in sink_list_volume[:sink_count]:
+    b = numbers.find(str(sink))
+    if b is not -1:
+        volume = sink_list_volume[count+sink_count]
+        volume = int(volume)
+    count += 1
 
 white = (255,255,255)
 grey = (235,235,235)

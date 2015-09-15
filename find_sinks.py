@@ -37,6 +37,13 @@ def editf(a):
         if b is not -1:
             newlist.append('index = "' + lines[b+7:] + '"')
         count+=1
+    for lines in a:
+        b = lines.find('volume: 0: ')
+        if b is not -1:
+            if int(lines[12:15]) < 100:
+                newlist.append('volume = "' + lines[13:15] + '"')
+            else:
+                newlist.append('volume = "' + lines[12:15] + '"')
     return newlist
 
 def edit_settings(text,text_find,new_value):
@@ -70,10 +77,10 @@ def edit_inputs_file(text):
     for lines in text:
         b = lines.find('volume: 0: ')
         if b is not -1:
-            if lines[12:15] == 100:
-                app_volume.append(lines[12:16])
-            else:
+            if int(lines[12:15]) == 100:
                 app_volume.append(lines[12:15])
+            else:
+                app_volume.append(lines[13:15])
     for lines in text:
         b = lines.find('sink: ')
         if b is not -1:
