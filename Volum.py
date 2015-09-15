@@ -112,6 +112,7 @@ def switch_sink_input(inputs,new_default):
     print ('Switched: ', inputs,' to ', new_default)
 
 def reset_inputs_list():
+    #Pulse_Audio: index, media.name, volume%, sink_index, application.name
     input_list = find_sinks.change_sink()
     text_list = []
     bar_list = []
@@ -145,6 +146,7 @@ def reset_inputs_list():
 def set_input_volume(index,volume):
     volume = volume*655
     os.popen('pacmd set-sink-input-volume %s %s' % (index, volume))
+
         
 def main_loop():
     global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
@@ -323,7 +325,6 @@ def program_loop():
     bar3 = 22
     redraw = True
     while True:
-            
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
                 
@@ -340,29 +341,49 @@ def program_loop():
                 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4:
-                    count = 0
+                    count, move = 0, 1
                     for bar in bar_list2:
-                        if input_list[count][2] < 100:
-                            if bar[5] == 1:
+                        if bar[5] == 1:
+                            move = 0
+                            if input_list[count][2] < 100:
                                 input_list[count][2] += 5
                                 if input_list[count][2] > 100:
                                     input_list[count][2] = 100
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
-                        redraw = True
+                    if move == 1:
+                        for bar in bar_list:
+                            bar[1] += 10
+                        for bar in bar_list2:
+                            bar[1] += 10
+                        for bar in bar_list3:
+                            bar[1] += 10
+                        for text in text_list:
+                            text[3] += 10
+                    redraw = True
                 if event.button == 5:
-                    count = 0
+                    count, move = 0, 1
                     for bar in bar_list2:
-                        if input_list[count][2] > 0:
-                            if bar[5] == 1:
+                        if bar[5] == 1:
+                            move = 0
+                            if input_list[count][2] > 0:
                                 input_list[count][2] -= 5
                                 if input_list[count][2] < 0:
                                     input_list[count][2] = 0
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
-                        redraw = True
+                    if move == 1:
+                        for bar in bar_list:
+                            bar[1] -= 10
+                        for bar in bar_list2:
+                            bar[1] -= 10
+                        for bar in bar_list3:
+                            bar[1] -= 10
+                        for text in text_list:
+                            text[3] -= 10
+                    redraw = True
                 elif event.button == 1:
                     count = 0
                     for bar in bar_list3:
