@@ -3,7 +3,7 @@
 ![Tab2.](https://github.com/Bakterija/Volum/tree/master/load/screenshot2.png)
 Requires python and pygame -- install with "install.sh"
 
-## Tested on Debian and Linux Mint
+## Tested on Debian, Linux Mint and Ubuntu
 Run "install.sh" to install required software
 
 Run "install qpaeq**.sh" to install the optional equalizer

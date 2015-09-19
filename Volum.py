@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-import pygame, os, find_sinks
+import pygame, os, find_sinks, subprocess
 def reset_sinks():
     global sink_list_index, sink_list, sink_count, sink_list_volume
     find_sinks.main()
     sink_list = find_sinks.sec()
-    print ('Available sinks: ', sink_list)
     sink_count = int(len(sink_list) / 3)
+    print ('Available sinks: ', sink_list[:sink_count])
     sink_list_index = sink_list[sink_count:-sink_count]
     sink_list_volume = sink_list[sink_count*2:]
+    print ('Volume: ', sink_list_volume)
     sink_list = sink_list[:sink_count]
     sink_list_volume = sink_list_index + sink_list_volume
-    print (sink_list_volume)
 
 def find_sink_index(sink_list_index):
     count = 0
@@ -95,7 +95,7 @@ def lower():
 def sys_arg_volum(volume):
     global sink
     volume = volume*655
-    os.popen('pacmd set-sink-volume %s %s' % (sink, volume))
+    subprocess.Popen('pacmd set-sink-volume %s %s' % (sink, volume), shell=True,stdout=subprocess.PIPE)
 
 def equalizer():
     os.system("qpaeq")
@@ -110,7 +110,6 @@ def switch_sink_inputs(count,new_default):
 
 def switch_sink_input(inputs,new_default):
     new_default = int(new_default)
-    print (new_default)
     os.system("load/./switch_inputs.sh %s %s" % (inputs,sink_list_index[new_default]))
     print ('Switched: ', inputs,' to ', new_default)
 
@@ -149,7 +148,7 @@ def reset_inputs_list():
 
 def set_input_volume(index,volume):
     volume = volume*655
-    os.popen('pacmd set-sink-input-volume %s %s' % (index, volume))
+    subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
 
         
 def main_loop():
