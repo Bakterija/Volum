@@ -28,6 +28,16 @@ def find_sink_index(sink_list_index):
         find_sinks.write_settings('default_sink',sink)
         return 0
 
+def find_volume():
+    global volume
+    count = 0
+    for numbers in sink_list_volume[:sink_count]:
+        b = numbers.find(str(sink))
+        if b is not -1:
+            volume = sink_list_volume[count+sink_count]
+            volume = int(volume)
+        count += 1
+
 pygame.init()
 pygame.display.set_caption('Volum')
 icon = pygame.image.load('load/volum.png')
@@ -46,14 +56,8 @@ eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
 ##options_pic = pygame.image.load('load/optionspic.png')
 ##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
-count = 0
 volume = 50
-for numbers in sink_list_volume[:sink_count]:
-    b = numbers.find(str(sink))
-    if b is not -1:
-        volume = sink_list_volume[count+sink_count]
-        volume = int(volume)
-    count += 1
+find_volume()
 
 white = (255,255,255)
 grey = (235,235,235)
@@ -62,6 +66,7 @@ dark_red = (180,25,25)
 black = (0,0,0)
 dark = (35,35,35)
 blue = (80,80,150)
+dblue = (50,50,120)
 lblue = (130,130,220)
 green = (0,255,0)
 blgr = (34,67,79)
@@ -81,6 +86,24 @@ def draw_text(text,variable,x,y,size,color,font):
 
 def draw_bar(bar_x, bar_y, bar_w, bar_h, color):  
     pygame.draw.rect(Display, color, [bar_x, bar_y, bar_w, bar_h])
+
+def check_mouse_hover(x_list,m_pos,redraw,hover_var,custom_xlen):
+    for obs in x_list:
+        if obs[hover_var] == True:
+            if custom_xlen == False:
+                custom_xlen = obs[2]
+            if m_pos[0] > obs[0]+custom_xlen or m_pos[0] < obs[0] or m_pos[1] < obs[1] or m_pos[1] > obs[1]+obs[3]:
+                obs[hover_var] = False
+                redraw = True
+    for obs in x_list:
+        if obs[hover_var] == False:
+            if custom_xlen == False:
+                custom_xlen = obs[2]
+            if m_pos[0] < obs[0]+custom_xlen and m_pos[0] > obs[0]:
+                if m_pos[1] < obs[1]+obs[3] and m_pos[1] > obs[1]:
+                    obs[hover_var] = True
+                    redraw = True
+    return x_list, redraw
 
 def higher():
     global volume, volume_timer, reset_timer
@@ -146,6 +169,16 @@ def reset_inputs_list():
 ##    print (input_list)
     return input_list, text_list, bar_list, bar_list2, bar_list3
 
+def switch_sink(sink_list_index,num,moving_inputs):
+    print ("Default sink set to ",sink_list_index)
+    sink = sink_list_index
+    sink_index = num
+    if moving_inputs == True:
+        switch_sink_inputs(num,sink)
+    find_sinks.write_settings('default_sink',sink)
+    reset_sinks()
+    return sink, sink_index
+
 def set_input_volume(index,volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
@@ -156,6 +189,8 @@ def main_loop():
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
     sink_index = int(find_sink_index(sink_list_index))
+    ##Button_list: 0X, 1Y, 2xlen, 3ylen, 4color, 5color_hover, 6command, 7hover
+    button_list = [[38, 10, 56, 20, blue, lblue, 'Global::', False,14],[100, 10, 76, 20, blue, lblue, 'Programs::', False,14]]
     mouse_pos = pygame.mouse.get_pos()
     if reset_timer < 0:
         reset_timer = 0
@@ -210,48 +245,28 @@ def main_loop():
                     redraw = True
                 if event.key == pygame.K_1:
                     if sink_count > 0:
-                        print ("Default sink set to ",sink_list_index[0])
-                        sink = sink_list_index[0]
-                        sink_index = 0
-                        if moving_inputs == True:
-                            switch_sink_inputs(0,sink)
-                        find_sinks.write_settings('default_sink',sink)
+                        sink, sink_index = switch_sink(sink_list_index[0],0,moving_inputs)
+                        find_volume()
                         redraw = True
                 if event.key == pygame.K_2:
                     if sink_count > 1:
-                        print ("Default sink set to ",sink_list_index[1])
-                        sink = sink_list_index[1]
-                        sink_index = 1
-                        if moving_inputs == True:
-                            switch_sink_inputs(1,sink)
-                        find_sinks.write_settings('default_sink',sink)
+                        sink, sink_index = switch_sink(sink_list_index[1],1,moving_inputs)
+                        find_volume()
                         redraw = True
                 if event.key == pygame.K_3:
                     if sink_count > 2:
-                        print ("Default sink set to ",sink_list_index[2])
-                        sink = sink_list_index[2]
-                        sink_index = 2
-                        if moving_inputs == True:
-                            switch_sink_inputs(2,sink)
-                        find_sinks.write_settings('default_sink',sink)
+                        sink, sink_index = switch_sink(sink_list_index[2],2,moving_inputs)
+                        find_volume()
                         redraw = True
                 if event.key == pygame.K_4:
                     if sink_count > 3:
-                        print ("Default sink set to ",sink_list_index[3])
-                        sink = sink_list_index[3]
-                        sink_index = 3
-                        if moving_inputs == True:
-                            switch_sink_inputs(3,sink)
-                        find_sinks.write_settings('default_sink',sink)
+                        sink, sink_index = switch_sink(sink_list_index[3],3,moving_inputs)
+                        find_volume()
                         redraw = True
                 if event.key == pygame.K_5:
                     if sink_count > 4:
-                        print ("Default sink set to ",sink_list_index[4])
-                        sink = sink_list_index[4]
-                        sink_index = 4
-                        if moving_inputs == True:
-                            switch_sink_inputs(4,sink)
-                        find_sinks.write_settings('default_sink',sink)
+                        sink, sink_index = switch_sink(sink_list_index[4],4,moving_inputs)
+                        find_volume()
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4 and volume<150:
@@ -269,8 +284,14 @@ def main_loop():
                     if mouse_pos[0] < scx/3.57 and mouse_pos[0] > scx/12.5:
                             if mouse_pos[1] < scy/3 and mouse_pos[1] > scy/3.75+4:
                                 reset_sinks()
+                    for x in button_list:
+                        if x[7] == True:
+                            if x[6] == 'Global::':
+                                print("It's here")
+                            if x[6] == 'Programs::':
+                                program_loop()
 
-        
+        button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
         if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
             if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
                 eq_draw = eq_pic_hov
@@ -311,6 +332,12 @@ def main_loop():
                 draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,black,2)
             else:
                 draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,dark_red,2)
+            for x in button_list:
+                if x[7] == True:
+                    draw_bar(x[0],x[1],x[2],x[3],x[5])
+                else:
+                    draw_bar(x[0],x[1],x[2],x[3],x[4])
+                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],white,2)
             
             if check_equalizer == True:
                 draw_picture(scx/12.5,scy/1.5,eq_draw)
@@ -324,6 +351,9 @@ def main_loop():
 def program_loop():
     global volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
     input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
+    ##Bar lists: 0X, 1Y, 2Width, 3Height, 4Color, 5Hover)
+    ##Button_list: 0X, 1Y, 2xlen, 3ylen, 4color, 5color_hover, 6command, 7hover
+    button_list = [[38, 10, 56, 20, blue, lblue, 'Global::', False,14],[100, 10, 76, 20, blue, lblue, 'Programs::', False,14]]
     bar2 = 100*1.5
     bar3 = 22
     redraw = True
@@ -388,6 +418,12 @@ def program_loop():
                             text[3] -= 10
                     redraw = True
                 elif event.button == 1:
+                    for x in button_list:
+                        if x[7] == True:
+                            if x[6] == 'Global::':
+                                main_loop()
+                            if x[6] == 'Programs::':
+                                print("It's here")
                     count = 0
                     for bar in bar_list3:
                         if bar[5] == 1:
@@ -400,26 +436,9 @@ def program_loop():
                             input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
                             redraw = True
 
-            for bar in bar_list2:
-                if mouse_pos[0] < bar[0]+bar2 and mouse_pos[0] > bar[0]:
-                    if mouse_pos[1] < bar[1] + bar[3] and mouse_pos[1] > bar[1]:
-                        bar[5] = 1
-                        redraw = True
-            for bar in bar_list2:
-                if bar[5] > 0:
-                    if mouse_pos[0] > bar[0]+bar2 or mouse_pos[0] < bar[0] or mouse_pos[1] > bar[1] + bar[3] or mouse_pos[1] < bar[1]:
-                        bar[5] = 0
-                        redraw = True
-            for bar in bar_list3:
-                if mouse_pos[0] < bar[0]+bar3 and mouse_pos[0] > bar[0]:
-                    if mouse_pos[1] < bar[1] + bar[3] and mouse_pos[1] > bar[1]:
-                        bar[5] = 1
-                        redraw = True
-            for bar in bar_list3:
-                if bar[5] > 0:
-                    if mouse_pos[0] > bar[0]+bar3 or mouse_pos[0] < bar[0] or mouse_pos[1] > bar[1] + bar[3] or mouse_pos[1] < bar[1]:
-                        bar[5] = 0
-                        redraw = True
+            bar_list2, redraw = check_mouse_hover(bar_list2,mouse_pos,redraw,5,bar2)
+            bar_list3, redraw = check_mouse_hover(bar_list3,mouse_pos,redraw,5,bar3)
+            button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
                         
         if redraw == True:
             Display.fill(grey)
@@ -439,6 +458,12 @@ def program_loop():
                     draw_bar(bar[0],bar[1],bar[2],bar[3],red)
             for text in text_list:
                 draw_text(text[0],text[1],text[2],text[3],text[4],text[5],text[6])
+            for x in button_list:
+                if x[7] == True:
+                    draw_bar(x[0],x[1],x[2],x[3],x[5])
+                else:
+                    draw_bar(x[0],x[1],x[2],x[3],x[4])
+                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],white,2)
             redraw = False
             pygame.display.update()
             
