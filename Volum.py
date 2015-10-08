@@ -39,7 +39,7 @@ def find_volume():
         count += 1
 
 pygame.init()
-pygame.display.set_caption('Volum')
+pygame.display.set_caption('Volume')
 icon = pygame.image.load('load/volum.png')
 pygame.display.set_icon(icon)
 sink = int(find_sinks.read_settings('default_sink = '))
@@ -61,6 +61,8 @@ find_volume()
 
 white = (255,255,255)
 grey = (235,235,235)
+greyer = (225,225,225)
+greyest =(215,215,215)
 red = (255,100,100)
 dark_red = (180,25,25)
 black = (0,0,0)
@@ -68,6 +70,7 @@ dark = (35,35,35)
 blue = (80,80,150)
 dblue = (50,50,120)
 lblue = (130,130,220)
+llblue = (180,180,245)
 green = (0,255,0)
 blgr = (34,67,79)
 
@@ -91,28 +94,37 @@ def check_mouse_hover(x_list,m_pos,redraw,hover_var,custom_xlen):
     for obs in x_list:
         if obs[hover_var] == True:
             if custom_xlen == False:
-                custom_xlen = obs[2]
-            if m_pos[0] > obs[0]+custom_xlen or m_pos[0] < obs[0] or m_pos[1] < obs[1] or m_pos[1] > obs[1]+obs[3]:
+                custom_xlen2 = obs[2]
+            else:
+                custom_xlen2 = custom_xlen
+            if m_pos[0] > obs[0]+custom_xlen2 or m_pos[0] < obs[0] or m_pos[1] < obs[1] or m_pos[1] > obs[1]+obs[3]:
                 obs[hover_var] = False
                 redraw = True
     for obs in x_list:
         if obs[hover_var] == False:
             if custom_xlen == False:
-                custom_xlen = obs[2]
-            if m_pos[0] < obs[0]+custom_xlen and m_pos[0] > obs[0]:
+                custom_xlen2 = obs[2]
+            else:
+                custom_xlen2 = custom_xlen
+            if m_pos[0] < obs[0]+custom_xlen2 and m_pos[0] > obs[0]:
                 if m_pos[1] < obs[1]+obs[3] and m_pos[1] > obs[1]:
                     obs[hover_var] = True
                     redraw = True
+##    print (x_list)
     return x_list, redraw
 
 def higher():
     global volume, volume_timer, reset_timer
     volume+=5
+    if volume > 150:
+        volume = 150
     volume_timer = reset_timer
 
 def lower():
     global volume, volume_timer, reset_timer
     volume-=5
+    if volume < 0:
+        volume = 0
     volume_timer = reset_timer
 
 def sys_arg_volum(volume):
@@ -190,8 +202,9 @@ def main_loop():
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
     sink_index = int(find_sink_index(sink_list_index))
     ##Button_list: 0X, 1Y, 2xlen, 3ylen, 4color, 5color_hover, 6command, 7hover
-    button_list = [[38, 10, 56, 20, blue, lblue, 'Global::', False,14],[100, 10, 76, 20, blue, lblue, 'Programs::', False,14]]
+    button_list = [[38, 10, 56, 20, grey, llblue, 'Global::', False,14],[100, 10, 76, 20, grey, llblue, 'Programs::', False,14]]
     mouse_pos = pygame.mouse.get_pos()
+    button_list[0][4], button_list[1][4] = greyest, grey
     if reset_timer < 0:
         reset_timer = 0
     check_equalizer = os.path.exists('/usr/bin/qpaeq')
@@ -231,7 +244,7 @@ def main_loop():
                     lower()
                     redraw = True
                 if event.key == pygame.K_F2:
-                    program_loop()
+                    program_loop(button_list)
                 if event.key == pygame.K_e:
                     stop = False
                     if moving_inputs == 0:
@@ -269,10 +282,10 @@ def main_loop():
                         find_volume()
                         redraw = True
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4 and volume<150:
+                if event.button == 4:
                     higher()
                     redraw = True
-                if event.button == 5 and volume>0:
+                if event.button == 5:
                     lower()
                     redraw = True
                 elif event.button == 1:
@@ -289,25 +302,25 @@ def main_loop():
                             if x[6] == 'Global::':
                                 print("It's here")
                             if x[6] == 'Programs::':
-                                program_loop()
+                                program_loop(button_list)
 
-        button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
-        if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
-            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
-                eq_draw = eq_pic_hov
-                redraw = True
-                eq_hov = True
+            button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
+            if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
+                if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
+                    eq_draw = eq_pic_hov
+                    redraw = True
+                    eq_hov = True
 ##        if mouse_pos[0] < scx/4.16+64 and mouse_pos[0] > scx/4.16:
 ##            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
 ##                options_draw = options_pic_hov
 ##                redraw = True
 ##                options_hov = True                
 
-        if eq_hov == True:
-            if mouse_pos[0] > scx/12.5+48 or mouse_pos[0] < scx/12.5 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
-                eq_draw = eq_pic
-                redraw = True
-                eq_hov = False
+            if eq_hov == True:
+                if mouse_pos[0] > scx/12.5+48 or mouse_pos[0] < scx/12.5 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
+                    eq_draw = eq_pic
+                    redraw = True
+                    eq_hov = False
 ##        if options_hov == True:
 ##            if mouse_pos[0] > scx/4.16+48 or mouse_pos[0] < scx/4.16 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
 ##                options_draw = options_pic
@@ -337,7 +350,7 @@ def main_loop():
                     draw_bar(x[0],x[1],x[2],x[3],x[5])
                 else:
                     draw_bar(x[0],x[1],x[2],x[3],x[4])
-                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],white,2)
+                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],black,2)
             
             if check_equalizer == True:
                 draw_picture(scx/12.5,scy/1.5,eq_draw)
@@ -348,14 +361,15 @@ def main_loop():
             
         clock.tick(60)
 
-def program_loop():
+def program_loop(button_list):
     global volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
     input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
+    button_list[0][4], button_list[1][4] = grey, greyest
     ##Bar lists: 0X, 1Y, 2Width, 3Height, 4Color, 5Hover)
-    ##Button_list: 0X, 1Y, 2xlen, 3ylen, 4color, 5color_hover, 6command, 7hover
-    button_list = [[38, 10, 56, 20, blue, lblue, 'Global::', False,14],[100, 10, 76, 20, blue, lblue, 'Programs::', False,14]]
     bar2 = 100*1.5
     bar3 = 22
+    mouse_pos = [0,0]
+    moved_pixels = 0
     redraw = True
     while True:
         for event in pygame.event.get():
@@ -394,6 +408,7 @@ def program_loop():
                             bar[1] += 10
                         for text in text_list:
                             text[3] += 10
+                        moved_pixels -= 1
                     redraw = True
                 if event.button == 5:
                     count, move = 0, 1
@@ -407,7 +422,7 @@ def program_loop():
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
-                    if move == 1:
+                    if move == 1 and moved_pixels < 0:
                         for bar in bar_list:
                             bar[1] -= 10
                         for bar in bar_list2:
@@ -416,6 +431,7 @@ def program_loop():
                             bar[1] -= 10
                         for text in text_list:
                             text[3] -= 10
+                        moved_pixels += 1
                     redraw = True
                 elif event.button == 1:
                     for x in button_list:
@@ -458,12 +474,13 @@ def program_loop():
                     draw_bar(bar[0],bar[1],bar[2],bar[3],red)
             for text in text_list:
                 draw_text(text[0],text[1],text[2],text[3],text[4],text[5],text[6])
+            draw_bar(0,0,scx,scy/8,grey)
             for x in button_list:
                 if x[7] == True:
                     draw_bar(x[0],x[1],x[2],x[3],x[5])
                 else:
                     draw_bar(x[0],x[1],x[2],x[3],x[4])
-                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],white,2)
+                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],black,2)
             redraw = False
             pygame.display.update()
             
