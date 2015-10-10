@@ -300,7 +300,7 @@ def main_loop():
                     for x in button_list:
                         if x[7] == True:
                             if x[6] == 'Global::':
-                                print("It's here")
+                                main_loop()
                             if x[6] == 'Programs::':
                                 program_loop(button_list)
 
@@ -399,7 +399,7 @@ def program_loop(button_list):
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
-                    if move == 1:
+                    if move == 1 and moved_pixels < 0:
                         for bar in bar_list:
                             bar[1] += 10
                         for bar in bar_list2:
@@ -408,7 +408,7 @@ def program_loop(button_list):
                             bar[1] += 10
                         for text in text_list:
                             text[3] += 10
-                        moved_pixels -= 1
+                        moved_pixels += 1
                     redraw = True
                 if event.button == 5:
                     count, move = 0, 1
@@ -422,7 +422,7 @@ def program_loop(button_list):
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
-                    if move == 1 and moved_pixels < 0:
+                    if move == 1:
                         for bar in bar_list:
                             bar[1] -= 10
                         for bar in bar_list2:
@@ -431,7 +431,7 @@ def program_loop(button_list):
                             bar[1] -= 10
                         for text in text_list:
                             text[3] -= 10
-                        moved_pixels += 1
+                        moved_pixels -= 1
                     redraw = True
                 elif event.button == 1:
                     for x in button_list:
@@ -439,7 +439,7 @@ def program_loop(button_list):
                             if x[6] == 'Global::':
                                 main_loop()
                             if x[6] == 'Programs::':
-                                print("It's here")
+                                program_loop(button_list)
                     count = 0
                     for bar in bar_list3:
                         if bar[5] == 1:
