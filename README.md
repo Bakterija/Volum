@@ -6,7 +6,9 @@ Requires python and pygame -- install with "install.sh"
 ## Tested on Debian, Mint and Ubuntu
 Run "install.sh" to install required software
 
-Run "install qpaeq**.sh" to install the optional equalizer
+Run "install qpaeq**.sh" to install an optional equalizer
+
+Run "install pulseaudio-**.sh" to install a different optional equalizer
 
 Run "make desktop launcher.py" to make a desktop launcher
 
