@@ -57,6 +57,7 @@ eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
 ##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
 volume = 50
+startup = True
 find_volume()
 
 white = (255,255,255)
@@ -132,8 +133,11 @@ def sys_arg_volum(volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-volume %s %s' % (sink, volume), shell=True,stdout=subprocess.PIPE)
 
-def equalizer():
-    os.system("qpaeq")
+def equalizer(equalizer_c):
+    if equalizer_c == 'pulse-eq-gtk':
+        os.system("pulseaudio-equalizer-gtk")
+    elif equalizer_c == 'qpaeq':
+        os.system("qpaeq")
 
 def switch_sink_inputs(count,new_default):
     new_default = int(new_default)
@@ -159,9 +163,9 @@ def reset_inputs_list():
     for inputs in input_list:
         offsetx = 0
         if len(inputs[1]) > 15:
-            inputs[1] = inputs[1][:15] + '..'
+            inputs[1] = inputs[1][:10] + '..'
         text_list.append(['',inputs[4],40,40+offset,16,black,2])
-        bar_list.append([199,39+offset,100*1.5+2,15+2,black])
+        bar_list.append([199,39+offset,120*1.5+2,15+2,black])
         bar_list2.append([200,40+offset,inputs[2]*1.5,15,red,0])
         for sinks in sink_list:
             text_list.append(['',sinks[:2],400+offsetx,40+offset,16,black,2])
@@ -197,7 +201,7 @@ def set_input_volume(index,volume):
 
         
 def main_loop():
-    global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
+    global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count, startup
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
     sink_index = int(find_sink_index(sink_list_index))
@@ -205,15 +209,23 @@ def main_loop():
     button_list = [[38, 10, 56, 20, grey, llblue, 'Global::', False,14],[100, 10, 76, 20, grey, llblue, 'Programs::', False,14]]
     mouse_pos = pygame.mouse.get_pos()
     button_list[0][4], button_list[1][4] = greyest, grey
+    check_equalizer = '0'
     if reset_timer < 0:
-        reset_timer = 0
-    check_equalizer = os.path.exists('/usr/bin/qpaeq')
-    if check_equalizer == False:
-        check_equalizer = os.path.exists('/usr/local/bin/qpaeq')
+        reset_timer = 0     
+    if os.path.exists('/usr/bin/qpaeq') == True:
+        check_equalizer = 'qpaeq'
+    if os.path.exists('/usr/local/bin/qpaeq') == True:
+        check_equalizer = 'qpaeq'
+    if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
+        check_equalizer = 'pulse-eq-gtk'
+    if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
+        check_equalizer = 'pulse-eq-gtk'
     inputs = find_sinks.change_sink()
-    print ('Inputs: ', inputs)
-    print ('Moving inputs: ', moving_inputs)
-    print ('----------------------- Done ------------------------>')
+    if startup == True:
+        print ('Inputs: ', inputs)
+        print ('Moving inputs: ', moving_inputs)
+        print ('----------------------- Done ------------------------>')
+        startup = False
     redraw = True
     eq_hov = False
     eq_draw = eq_pic
@@ -289,10 +301,10 @@ def main_loop():
                     lower()
                     redraw = True
                 elif event.button == 1:
-                    if check_equalizer == True:
+                    if check_equalizer is not 0:
                         if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
                             if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
-                                equalizer()
+                                equalizer(check_equalizer)
                                 redraw = True
                     if mouse_pos[0] < scx/3.57 and mouse_pos[0] > scx/12.5:
                             if mouse_pos[1] < scy/3 and mouse_pos[1] > scy/3.75+4:
@@ -352,7 +364,7 @@ def main_loop():
                     draw_bar(x[0],x[1],x[2],x[3],x[4])
                 draw_text(x[6],'',x[0]+3,x[1]+2,x[8],black,2)
             
-            if check_equalizer == True:
+            if check_equalizer is not 0:
                 draw_picture(scx/12.5,scy/1.5,eq_draw)
 ##            draw_picture(scx/4.16,scy/1.5,options_draw)
                     
@@ -366,7 +378,7 @@ def program_loop(button_list):
     input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
     button_list[0][4], button_list[1][4] = grey, greyest
     ##Bar lists: 0X, 1Y, 2Width, 3Height, 4Color, 5Hover)
-    bar2 = 100*1.5
+    bar2 = 120*1.5
     bar3 = 22
     mouse_pos = [0,0]
     moved_pixels = 0
@@ -392,10 +404,10 @@ def program_loop(button_list):
                     for bar in bar_list2:
                         if bar[5] == 1:
                             move = 0
-                            if input_list[count][2] < 100:
+                            if input_list[count][2] < 120:
                                 input_list[count][2] += 5
-                                if input_list[count][2] > 100:
-                                    input_list[count][2] = 100
+                                if input_list[count][2] > 120:
+                                    input_list[count][2] = 120
                                 bar[2] = input_list[count][2]*1.5
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
@@ -452,19 +464,28 @@ def program_loop(button_list):
                             input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
                             redraw = True
 
+            ## 0x_list, 1m_pos, 2redraw, 3hover_var, 4custom_xlen
             bar_list2, redraw = check_mouse_hover(bar_list2,mouse_pos,redraw,5,bar2)
             bar_list3, redraw = check_mouse_hover(bar_list3,mouse_pos,redraw,5,bar3)
             button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
                         
         if redraw == True:
             Display.fill(grey)
+            ## Under Volume bars
             for bar in bar_list:
                     draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+            ## Volume bars
             for bar in bar_list2:
                 if bar[5] == 0:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+                    if bar[2] > 150:
+                        draw_bar(bar[0],bar[1],150,bar[3],bar[4])
+                        draw_bar(bar[0]+150,bar[1],bar[2]-150,bar[3],blue)
+                    else:
+                        draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
                 else:
                     draw_bar(bar[0],bar[1],bar[2],bar[3],blue)
+                draw_text('',int(bar[2]/1.5),bar[0]+5,bar[1]+1,12,white,1)
+            ## Device buttons
             for bar in bar_list3:
                 if bar[7] > -1:
                     draw_bar(bar[0],bar[1],bar[2],bar[3],green)

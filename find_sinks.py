@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+import os, subprocess
 path = os.getcwd()+'/'
 
 def output_sinks():
@@ -17,6 +17,7 @@ def editf(a):
     count = 0
     newlist = []
     for lines in a:
+##        print (lines)
         b = lines.find('alsa.name')
         if b is not -1:
             newlist.append(a[count])
@@ -47,6 +48,7 @@ def editf(a):
                     newlist.append('volume = "' + lines[b-2:b] + '"')
                 else:
                     newlist.append('volume = "' + lines[b-3:b] + '"')
+    
     return newlist
 
 def edit_settings(text,text_find,new_value):
@@ -83,10 +85,7 @@ def edit_inputs_file(text):
             c = lines.find('base volume:')
             if c is -1:
                 b = lines.find('%')
-                if int(lines[b-3:b]) == 100:
-                    app_volume.append(lines[b-3:b])
-                else:
-                    app_volume.append(lines[b-2:b])
+                app_volume.append(int(lines[b-3:b]))
     for lines in text:
         b = lines.find('sink: ')
         if b is not -1:
@@ -118,11 +117,21 @@ def savef(text,file):
     f.write(text)
     f.close()
 
+def read_sinks():
+    INPUT = 'pacmd list-sinks'
+    cmd_FORMAT = INPUT.split()
+    output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
+    output = str(output)
+    output = output.splitlines()
+    return output
+
 def main():
     output_sinks()
+##    a = read_sinks()
     a = readf('load/sinks.txt')
     a = editf(a)
     text = a = '\n'.join(str(e) for e in a)
+##    print (text)
     savef(text,'load/sinks.txt')
 
 def sec():
