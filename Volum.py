@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import pygame, os, find_sinks, subprocess
+startup = True
 def reset_sinks():
     global sink_list_index, sink_list, sink_count, sink_list_volume
-    find_sinks.main()
-    sink_list = find_sinks.sec()
+    finds_main = find_sinks.main()
+    sink_list = find_sinks.sec(finds_main)
     sink_count = int(len(sink_list) / 3)
-    print ('Available sinks: ', sink_list[:sink_count])
     sink_list_index = sink_list[sink_count:-sink_count]
     sink_list_volume = sink_list[sink_count*2:]
-    print ('Volume: ', sink_list_volume)
     sink_list = sink_list[:sink_count]
     sink_list_volume = sink_list_index + sink_list_volume
+    find_volume()
+    if startup == True:
+        print ('Available sinks: ', sink_list[:sink_count])
+        print ('Volume: ', sink_list_volume)
 
 def find_sink_index(sink_list_index):
     count = 0
@@ -57,7 +60,6 @@ eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
 ##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
 volume = 50
-startup = True
 find_volume()
 
 white = (255,255,255)
@@ -66,14 +68,24 @@ greyer = (225,225,225)
 greyest =(215,215,215)
 red = (255,100,100)
 dark_red = (180,25,25)
+dark_red2 = (220,70,70)
 black = (0,0,0)
 dark = (35,35,35)
+ldark = (55,55,55)
 blue = (80,80,150)
 dblue = (50,50,120)
 lblue = (130,130,220)
 llblue = (180,180,245)
 green = (0,255,0)
 blgr = (34,67,79)
+yellow = (200,200,120)
+
+## Switch colors
+##black = greyer
+##white = yellow
+##greyest = ldark
+##grey = dark
+##red = dark_red2
 
 
 def draw_picture(x,y,picture):
@@ -162,8 +174,8 @@ def reset_inputs_list():
     offset = 0
     for inputs in input_list:
         offsetx = 0
-        if len(inputs[1]) > 15:
-            inputs[1] = inputs[1][:10] + '..'
+        if len(inputs[4]) > 17:
+            inputs[4] = inputs[4][:17] + '..'
         text_list.append(['',inputs[4],40,40+offset,16,black,2])
         bar_list.append([199,39+offset,120*1.5+2,15+2,black])
         bar_list2.append([200,40+offset,inputs[2]*1.5,15,red,0])
@@ -198,7 +210,6 @@ def switch_sink(sink_list_index,num,moving_inputs):
 def set_input_volume(index,volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
-
         
 def main_loop():
     global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count, startup
@@ -211,30 +222,45 @@ def main_loop():
     button_list[0][4], button_list[1][4] = greyest, grey
     check_equalizer = '0'
     if reset_timer < 0:
-        reset_timer = 0     
-    if os.path.exists('/usr/bin/qpaeq') == True:
-        check_equalizer = 'qpaeq'
-    if os.path.exists('/usr/local/bin/qpaeq') == True:
-        check_equalizer = 'qpaeq'
-    if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
-        check_equalizer = 'pulse-eq-gtk'
-    if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
-        check_equalizer = 'pulse-eq-gtk'
+        reset_timer = 0
     inputs = find_sinks.change_sink()
     if startup == True:
         print ('Inputs: ', inputs)
         print ('Moving inputs: ', moving_inputs)
+        if os.path.exists('/usr/bin/qpaeq') == True:
+            check_equalizer = 'qpaeq'
+        if os.path.exists('/usr/local/bin/qpaeq') == True:
+            check_equalizer = 'qpaeq'
+        if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
+            check_equalizer = 'pulse-eq-gtk'
+        if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
+            check_equalizer = 'pulse-eq-gtk'
+        if check_equalizer == '0' :
+            print 'Equalizer not found'
+        else:
+            print check_equalizer,'found'
         print ('----------------------- Done ------------------------>')
         startup = False
+    sink_reset_timer = 60
     redraw = True
     eq_hov = False
     eq_draw = eq_pic
-##    options_hov = False
-##    options_draw = options_pic
     volume_timer = -9001
+    oldsinks = find_sinks.main()
+    newsinks = find_sinks.main()
+    reset_sinks()
     while True:
         if volume_timer > 0:
             volume_timer -= 1
+        if sink_reset_timer > 0:
+            sink_reset_timer -= 1
+        else:
+            oldsinks = list(newsinks)
+            newsinks = find_sinks.main()
+            sink_reset_timer = 60
+            if newsinks != oldsinks:
+                reset_sinks()
+                redraw = True
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
                 
@@ -309,6 +335,8 @@ def main_loop():
                     if mouse_pos[0] < scx/3.57 and mouse_pos[0] > scx/12.5:
                             if mouse_pos[1] < scy/3 and mouse_pos[1] > scy/3.75+4:
                                 reset_sinks()
+                                redraw = True
+                                
                     for x in button_list:
                         if x[7] == True:
                             if x[6] == 'Global::':
@@ -321,23 +349,13 @@ def main_loop():
                 if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
                     eq_draw = eq_pic_hov
                     redraw = True
-                    eq_hov = True
-##        if mouse_pos[0] < scx/4.16+64 and mouse_pos[0] > scx/4.16:
-##            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
-##                options_draw = options_pic_hov
-##                redraw = True
-##                options_hov = True                
+                    eq_hov = True            
 
             if eq_hov == True:
                 if mouse_pos[0] > scx/12.5+48 or mouse_pos[0] < scx/12.5 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
                     eq_draw = eq_pic
                     redraw = True
                     eq_hov = False
-##        if options_hov == True:
-##            if mouse_pos[0] > scx/4.16+48 or mouse_pos[0] < scx/4.16 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
-##                options_draw = options_pic
-##                redraw = True
-##                options_hov = False
                   
         if volume_timer == 0:
             volume_timer -= 9001
@@ -366,7 +384,6 @@ def main_loop():
             
             if check_equalizer is not 0:
                 draw_picture(scx/12.5,scy/1.5,eq_draw)
-##            draw_picture(scx/4.16,scy/1.5,options_draw)
                     
             pygame.display.update()
             redraw = False
@@ -382,6 +399,7 @@ def program_loop(button_list):
     bar3 = 22
     mouse_pos = [0,0]
     moved_pixels = 0
+    input_reset_timer = 60
     redraw = True
     while True:
         for event in pygame.event.get():

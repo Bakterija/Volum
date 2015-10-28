@@ -2,9 +2,6 @@
 import os, subprocess
 path = os.getcwd()+'/'
 
-def output_sinks():
-    os.system("load/./devices.sh %s" % (path+('load/sinks.txt')))
-
 def readf(filename):
     file = path+filename
     f = open(file, 'rU')
@@ -126,16 +123,11 @@ def read_sinks():
     return output
 
 def main():
-    output_sinks()
-##    a = read_sinks()
-    a = readf('load/sinks.txt')
+    a = read_sinks()
     a = editf(a)
-    text = a = '\n'.join(str(e) for e in a)
-##    print (text)
-    savef(text,'load/sinks.txt')
+    return a
 
-def sec():
-    text = readf('load/sinks.txt')
+def sec(text):
     sinklist = []
     for lines in text:
         b = lines.find('=')
@@ -145,12 +137,20 @@ def sec():
     return sinklist
 
 def change_sink():
-    os.system("load/./get_inputs.sh")
-    text = readf('load/inputs.txt')
+    INPUT = 'pacmd list-sink-inputs'
+    cmd_FORMAT = INPUT.split()
+    output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
+    text = str(output)
+    text = output.splitlines()
     text = edit_inputs_file(text)
-##    text = a = '\n'.join(str(e) for e in a)
-##    savef(text,'load/inputs.txt')
     return text
+
+def get_input_list():
+    INPUT = 'pacmd list-sink-inputs'
+    cmd_FORMAT = INPUT.split()
+    output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
+    output = str(output)
+    return output
 
 def write_settings(text_find,new_value):
     a = readf('load/settings')
