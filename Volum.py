@@ -3,16 +3,16 @@ import pygame, os, find_sinks, subprocess
 startup = True
 def reset_sinks():
     global sink_list_index, sink_list, sink_count, sink_list_volume
-    finds_main = find_sinks.main()
-    sink_list = find_sinks.sec(finds_main)
-    sink_count = int(len(sink_list) / 3)
-    sink_list_index = sink_list[sink_count:-sink_count]
-    sink_list_volume = sink_list[sink_count*2:]
-    sink_list = sink_list[:sink_count]
-    sink_list_volume = sink_list_index + sink_list_volume
+    sink_list_index, sink_list_volume, sink_name = [], [], []
+    sink_list = find_sinks.main()
+    sink_count = len(sink_list)
+    for x in sink_list:
+        sink_list_index.append(x[0])
+        sink_list_volume.append(x[1])
+        sink_name.append(x[2])
     find_volume()
     if startup == True:
-        print ('Available sinks: ', sink_list[:sink_count])
+        print ('Available sinks: ', sink_name)
         print ('Volume: ', sink_list_volume)
 
 def find_sink_index(sink_list_index):
@@ -34,11 +34,10 @@ def find_sink_index(sink_list_index):
 def find_volume():
     global volume
     count = 0
-    for numbers in sink_list_volume[:sink_count]:
-        b = numbers.find(str(sink))
+    for numbers in sink_list:
+        b = numbers[0].find(str(sink))
         if b is not -1:
-            volume = sink_list_volume[count+sink_count]
-            volume = int(volume)
+            volume = numbers[1]
         count += 1
 
 pygame.init()
@@ -56,9 +55,8 @@ sink_index = int(find_sink_index(sink_list_index))
 print ('Default sink: ', sink_list[sink_index])
 eq_pic = pygame.image.load('load/eqpic.png')
 eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
-##options_pic = pygame.image.load('load/optionspic.png')
-##options_pic_hov = pygame.image.load('load/optionspic_hov.png')
 clock = pygame.time.Clock()
+check_equalizer = '0'
 volume = 50
 find_volume()
 
@@ -174,13 +172,18 @@ def reset_inputs_list():
     offset = 0
     for inputs in input_list:
         offsetx = 0
-        if len(inputs[4]) > 17:
-            inputs[4] = inputs[4][:17] + '..'
+        try:
+            if len(inputs[4]) > 17:
+                inputs[4] = inputs[4][:17] + '..'
+        except:
+            inputs.append(inputs[1])
+            if len(inputs[4]) > 17:
+                inputs[4] = inputs[4][:17] + '..'
         text_list.append(['',inputs[4],40,40+offset,16,black,2])
         bar_list.append([199,39+offset,120*1.5+2,15+2,black])
         bar_list2.append([200,40+offset,inputs[2]*1.5,15,red,0])
         for sinks in sink_list:
-            text_list.append(['',sinks[:2],400+offsetx,40+offset,16,black,2])
+            text_list.append(['',sinks[2][0:2],400+offsetx,40+offset,16,black,2])
             offsetx+=25
         offset += 30
     offset, offsetx, count = 0, 0, 0
@@ -213,6 +216,7 @@ def set_input_volume(index,volume):
         
 def main_loop():
     global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count, startup
+    global check_equalizer
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
     sink_index = int(find_sink_index(sink_list_index))
@@ -220,7 +224,6 @@ def main_loop():
     button_list = [[38, 10, 56, 20, grey, llblue, 'Global::', False,14],[100, 10, 76, 20, grey, llblue, 'Programs::', False,14]]
     mouse_pos = pygame.mouse.get_pos()
     button_list[0][4], button_list[1][4] = greyest, grey
-    check_equalizer = '0'
     if reset_timer < 0:
         reset_timer = 0
     inputs = find_sinks.change_sink()
@@ -241,7 +244,7 @@ def main_loop():
             print check_equalizer,'found'
         print ('----------------------- Done ------------------------>')
         startup = False
-    sink_reset_timer = 60
+    sink_reset_timer = 200
     redraw = True
     eq_hov = False
     eq_draw = eq_pic
@@ -263,6 +266,7 @@ def main_loop():
                 redraw = True
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
+            sink_reset_timer = 200
                 
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -372,9 +376,9 @@ def main_loop():
                 draw_bar(scx/12.5+100*scx/178.571,scy/7.5,(volume-100)*scx/178.571,scy/10,blue)
             draw_text('',volume,scx/12.5+5,scy/7.5+2,22,white,1)
             if moving_inputs == True:
-                draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,black,2)
+                draw_text('Sink: ',sink_list[sink_index][2],scx/12.5+2,scy/3.75+2,18,black,2)
             else:
-                draw_text('Sink: ',sink_list[sink_index],scx/12.5+2,scy/3.75+2,18,dark_red,2)
+                draw_text('Sink: ',sink_list[sink_index][2],scx/12.5+2,scy/3.75+2,18,dark_red,2)
             for x in button_list:
                 if x[7] == True:
                     draw_bar(x[0],x[1],x[2],x[3],x[5])

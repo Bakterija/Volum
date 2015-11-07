@@ -11,42 +11,43 @@ def readf(filename):
     return a
 
 def editf(a):
-    count = 0
+    li_count = 0
+    index = -1
     newlist = []
-    for lines in a:
-##        print (lines)
-        b = lines.find('alsa.name')
-        if b is not -1:
-            newlist.append(a[count])
-        else:
-            b = lines.find('FFT based equalizer')
-            if b is not -1:
-                newlist.append('alsa.name = "FFT equalizer"')
-        count+=1
-    count = 0
-    for lines in newlist:
-        b = lines.find('alsa')
-        lines = lines[b:]
-        newlist[count] = lines
-        count+=1
-    count = 0
+    ## 0index, 1volume, 2name
+    newlist2 = []
     for lines in a:
         b = lines.find('index:')
         if b is not -1:
-            newlist.append('index = "' + lines[b+7:] + '"')
-        count+=1
+            newlist.append([lines[b+7:]])
+            newlist2.append([lines[b+7:]])
     for lines in a:
-        b = lines.find('volume:')
+        b = lines.find('index:')
+        if index > -1:
+            newlist[index].append(lines)
         if b is not -1:
-            c = lines.find('base volume:')
-            if c is -1:
-                b = lines.find('%')
-                if int(lines[b-3:b]) < 100:
-                    newlist.append('volume = "' + lines[b-2:b] + '"')
-                else:
-                    newlist.append('volume = "' + lines[b-3:b] + '"')
-    
-    return newlist
+            index += 1
+    index = 0
+    for indexes in newlist:
+        for text in indexes:
+            b = text.find('alsa.name')
+            if b is not -1:
+                newlist2[index].append(text[b+13:-1])
+            b = text.find('volume:')
+            if b is not -1:
+                c = text.find('base volume:')
+                if c is -1:
+                    b = text.find('%')
+                    newlist2[index].append(int(text[b-3:b]))
+        index+=1
+    count = 0
+    for x in newlist2:
+        if len(x) < 3:
+##            newlist2.pop(count)
+            newlist2[count].append('Noname')
+        count+= 1
+
+    return newlist2
 
 def edit_settings(text,text_find,new_value):
     count = 0
@@ -96,9 +97,9 @@ def edit_inputs_file(text):
         count += 1
     count = 0
     for lines in text:
-        b = lines.find('application.name = ')
+        b = lines.find('process.binary = ')
         if b is not -1:
-            newlist[count].append(lines[22:-1])
+            newlist[count].append(lines[32:-1])
             count += 1
     return newlist
 
@@ -126,15 +127,6 @@ def main():
     a = read_sinks()
     a = editf(a)
     return a
-
-def sec(text):
-    sinklist = []
-    for lines in text:
-        b = lines.find('=')
-        if b is not -1:
-            c = lines[b+3:-1]
-            sinklist.append(c)
-    return sinklist
 
 def change_sink():
     INPUT = 'pacmd list-sink-inputs'
