@@ -215,7 +215,7 @@ def set_input_volume(index,volume):
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
         
 def main_loop():
-    global volume, volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count, startup
+    global volume, volume_timer, reset_timer, startup
     global check_equalizer
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
@@ -436,15 +436,7 @@ def program_loop(button_list):
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
                     if move == 1 and moved_pixels < 0:
-                        for bar in bar_list:
-                            bar[1] += 10
-                        for bar in bar_list2:
-                            bar[1] += 10
-                        for bar in bar_list3:
-                            bar[1] += 10
-                        for text in text_list:
-                            text[3] += 10
-                        moved_pixels += 1
+                        moved_pixels += 10
                     redraw = True
                 if event.button == 5:
                     count, move = 0, 1
@@ -459,15 +451,7 @@ def program_loop(button_list):
                                 set_input_volume(input_list[count][0],input_list[count][2])
                         count += 1
                     if move == 1:
-                        for bar in bar_list:
-                            bar[1] -= 10
-                        for bar in bar_list2:
-                            bar[1] -= 10
-                        for bar in bar_list3:
-                            bar[1] -= 10
-                        for text in text_list:
-                            text[3] -= 10
-                        moved_pixels -= 1
+                        moved_pixels -= 10
                     redraw = True
                 elif event.button == 1:
                     for x in button_list:
@@ -489,36 +473,36 @@ def program_loop(button_list):
                             redraw = True
 
             ## 0x_list, 1m_pos, 2redraw, 3hover_var, 4custom_xlen
-            bar_list2, redraw = check_mouse_hover(bar_list2,mouse_pos,redraw,5,bar2)
-            bar_list3, redraw = check_mouse_hover(bar_list3,mouse_pos,redraw,5,bar3)
-            button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
+            bar_list2, redraw = check_mouse_hover(bar_list2,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,5,bar2)
+            bar_list3, redraw = check_mouse_hover(bar_list3,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,5,bar3)
+            button_list, redraw = check_mouse_hover(button_list,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,7,False)
                         
         if redraw == True:
             Display.fill(grey)
             ## Under Volume bars
             for bar in bar_list:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
             ## Volume bars
             for bar in bar_list2:
                 if bar[5] == 0:
                     if bar[2] > 150:
-                        draw_bar(bar[0],bar[1],150,bar[3],bar[4])
-                        draw_bar(bar[0]+150,bar[1],bar[2]-150,bar[3],blue)
+                        draw_bar(bar[0],bar[1]+moved_pixels,150,bar[3],bar[4])
+                        draw_bar(bar[0]+150,bar[1]+moved_pixels,bar[2]-150,bar[3],blue)
                     else:
-                        draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+                        draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
                 else:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],blue)
-                draw_text('',int(bar[2]/1.5),bar[0]+5,bar[1]+1,12,white,1)
+                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],blue)
+                draw_text('',int(bar[2]/1.5),bar[0]+5,bar[1]+1+moved_pixels,12,white,1)
             ## Device buttons
             for bar in bar_list3:
                 if bar[7] > -1:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],green)
+                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],green)
                 if bar[7] == -1:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],bar[4])
+                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
                 if bar[5] == 1:
-                    draw_bar(bar[0],bar[1],bar[2],bar[3],red)
+                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],red)
             for text in text_list:
-                draw_text(text[0],text[1],text[2],text[3],text[4],text[5],text[6])
+                draw_text(text[0],text[1],text[2],text[3]+moved_pixels,text[4],text[5],text[6])
             draw_bar(0,0,scx,scy/8,grey)
             for x in button_list:
                 if x[7] == True:
