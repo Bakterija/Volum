@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pygame, os, find_sinks, subprocess
 startup = True
+sink = 0
 def reset_sinks():
     global sink_list_index, sink_list, sink_count, sink_list_volume
     sink_list_index, sink_list_volume, sink_name = [], [], []
@@ -160,7 +161,7 @@ def switch_sink_inputs(count,new_default):
 def switch_sink_input(inputs,new_default):
     new_default = int(new_default)
     os.system("load/./switch_inputs.sh %s %s" % (inputs,sink_list_index[new_default]))
-    print ('Switched: ', inputs,' to ', new_default)
+    print ('Switched: ', inputs ,' to ', new_default)
 
 def reset_inputs_list():
     #Pulse_Audio: index, media.name, volume%, sink_index, application.name
@@ -189,7 +190,7 @@ def reset_inputs_list():
     offset, offsetx, count = 0, 0, 0
     for inputs in input_list:
         for sinks in sink_list:
-            if int(inputs[3]) == int(sink_list_index[count]):
+            if int(inputs[3]) == int(sinks[0]):
                 bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],inputs[3]])
             else:
                 bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],-1])
@@ -197,7 +198,6 @@ def reset_inputs_list():
             offsetx += 25
         offset += 30
         offsetx, count = 0, 0
-##    print (input_list)
     return input_list, text_list, bar_list, bar_list2, bar_list3
 
 def switch_sink(sink_list_index,num,moving_inputs):
@@ -286,6 +286,7 @@ def main_loop():
                     lower()
                     redraw = True
                 if event.key == pygame.K_F2:
+                    reset_sinks()
                     program_loop(button_list)
                 if event.key == pygame.K_e:
                     stop = False
@@ -346,6 +347,7 @@ def main_loop():
                             if x[6] == 'Global::':
                                 main_loop()
                             if x[6] == 'Programs::':
+                                reset_sinks()
                                 program_loop(button_list)
 
             button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)

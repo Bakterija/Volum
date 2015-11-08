@@ -46,6 +46,10 @@ def editf(a):
 ##            newlist2.pop(count)
             newlist2[count].append('Noname')
         count+= 1
+    count = 0
+    for x in newlist2:
+        x.append(count)
+        count+= 1
 
     return newlist2
 
@@ -87,7 +91,10 @@ def edit_inputs_file(text):
     for lines in text:
         b = lines.find('sink: ')
         if b is not -1:
-            app_sink_index.append(lines[7])
+            try:
+                app_sink_index.append(int(lines[7:10]))
+            except:
+                app_sink_index.append(int(lines[7:9]))
     listlen = len(app_index)
     count = 0
     while count < listlen:
