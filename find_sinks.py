@@ -104,9 +104,9 @@ def edit_inputs_file(text):
         count += 1
     count = 0
     for lines in text:
-        b = lines.find('process.binary = ')
+        b = lines.find('application.name = ')
         if b is not -1:
-            newlist[count].append(lines[32:-1])
+            newlist[count].append(lines[3+len('application.name = '):-1])
             count += 1
     return newlist
 

@@ -215,7 +215,7 @@ def set_input_volume(index,volume):
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
         
 def main_loop():
-    global volume, volume_timer, reset_timer, startup
+    global volume, volume_timer, reset_timer, startup, sink_index, sink
     global check_equalizer
     reset_timer = int(find_sinks.read_settings('timer = '))
     moving_inputs = int(find_sinks.read_settings('m_inputs = '))
