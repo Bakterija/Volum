@@ -10,11 +10,11 @@ def editf():
     a.append('[Desktop Entry]')
     a.append('Comment=')
     a.append('Terminal=false')
-    a.append('Name=Volum')
+    a.append('Name=SPAGUI')
     a.append('Exec='+ path + 'Volum.py')
     a.append('Path='+ path)
     a.append('Type=Application')
-    a.append('Icon=' + path + 'load/volum.png')
+    a.append('Icon=' + path + 'load/icon.ico')
     return a
 
 def savef(text):

@@ -12,7 +12,7 @@ from ttk import Menubutton
 from ttk import Scale
 from ttk import Separator
 from ttk import Treeview
-from ttk import Label
+##from ttk import Label
 from ttk import Widget
 ##from ttk import Frame as ttkFrame
 from threading import Thread
@@ -129,6 +129,15 @@ def switch_input_sink(index,new_index):
     print index, new_index
     gui_handler.reset_timer()
 
+def move_inputs_to_sink(index):
+    inputs_to_move = pac.return_inputs()
+    os.system("load/./set_default_sink.sh %s" % (index[0]))
+    for inputs in inputs_to_move:
+        os.system("load/./switch_inputs.sh %s %s" % (inputs[0],index[0]))
+    for x in inputs_to_move:
+        print 'Switched: ', x[0],' '+x[1]+' ',' to ', index[2]
+    gui_handler.reset_timer()
+
 class PA_controller:
     def __init__(self):
         print '-'*21+'PA_controller __init__'+'-'*21+'\n'+'-'*64
@@ -136,7 +145,7 @@ class PA_controller:
         self.startup = True
         self.sink_inputs2, self.sinks2 = [], []
         self.reset_sinks_inputs()
-##        self.reset_sinks_inputs()
+        self.reset_sinks_inputs()
 
     def return_sinks(self):
         return self.sinks
@@ -285,7 +294,7 @@ class msg_binder:
         self.img_hov = get_dict_item(kwargs,'img_hov','')
 
         if self.img == '':
-            self.msg = Message(frame, text=text, width=width)
+            self.msg = Message(frame, text=text)
             self.msg.config(bg=self.bg, fg=self.fg, width=width, font=font)
         else:
             self.msg = Label(frame, image=self.img, width=width, background=self.bg)
@@ -360,6 +369,8 @@ class App_handler:
         volume = int(get_dict_item(kwargs,'volume', 50))
         sink = int(get_dict_item(kwargs,'sink', 0))
         app_name = get_dict_item(kwargs,'app_name', 'n/a')
+        if app_name == 'n/a':
+            app_name = media_name
         y_adjustment = 0 + self.app_placement +(self.app_place_interval* len(self.frame_list))
         App_frame(self.frame, index, y_adjustment, media_name, volume, sink, app_name)
         self.frame_list[-1].bind('<Button-5>', self.frame_place_UP)
@@ -396,8 +407,8 @@ class App_frame:
         self.volume = volume
         self.sink = str(sink)
         self.app_name = app_name
-        self.canva_hov = False
         self.button_list = []
+        self.volcol = (vol_red,vol_blue)
 
         self.frame = Frame(parent, width=int(X_root)-60, height=20,bg=gui_handler.bg_color)
         self.frame.pack_propagate(0)
@@ -440,22 +451,19 @@ class App_frame:
     def redraw_volume(self):
         self.canva.delete(ALL)
         volume = float(self.volume)
-        if self.canva_hov == False:
-            if self.volume <= 100:
-                self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_red, outline='')
-            else:
-                self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_red, outline='')
-                self.canva.create_rectangle(150, 1, volume/100*150, 19, fill=vol_blue, outline='')
+        if self.volume <= 100:
+            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
         else:
-            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_blue, outline='')
+            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
+            self.canva.create_rectangle(150, 1, volume/100*150, 19, fill=self.volcol[1], outline='')
         self.canva.create_text((0,10),anchor=W, text=' '+str(self.volume),
                                       font= ('Liberation sans', 11, 'bold'), fill='white')
-
+        
     def on_enter(self,*arg):
-        self.canva_hov = True
+        self.volcol = (vol_red2,vol_blue2)
         self.redraw_volume()
     def on_leave(self,*arg):
-        self.canva_hov = False
+        self.volcol = (vol_red,vol_blue)
         self.redraw_volume()
 
     def volume_UP(self,*arg):
@@ -487,6 +495,7 @@ class GUI_handler:
         self.bg_frame1 = '#DCDCDC'
         self.bg_color = '#EBEBEB'
         self.label_color = '#E1E1E1'
+        self.volcol = (vol_red,vol_blue)
         self.timer = 1500
         self.timer2 = -99
         self.timed_event = None
@@ -502,6 +511,7 @@ class GUI_handler:
 
         root.bind('<F1>', lambda x: self.device_tab())
         root.bind('<F2>', lambda x: self.app_tab())
+        root.bind('<e>', self.toggle_input_moving)
         root.after(100, self.timer_task)
         root.after(20, self.timer2_task)
         
@@ -514,11 +524,15 @@ class GUI_handler:
         self.redraw_volume_bar()
 
         self.eq_button = msg_binder(self.frame1, img=self.eq_picture, img_hov=self.eq_picture_hov, bg=self.bg_color,
-                                    func='func', command=lambda : equalizer(check_equalizer))
+                                    width=60,func='func', command=lambda : equalizer(check_equalizer))
         self.eq_button.pack(side=BOTTOM,padx=30,pady=30)
 
+        if m_inputs == 1:
+            bgcol = 'black'
+        else:
+            bgcol = vol_red2
         self.sink_label = Label(self.frame1, text='Sink: '+self.active_sink[2], font=('Droid sans',14,'normal'),
-                                foreground='black', background=self.bg_color)
+                                foreground=bgcol, background=self.bg_color)
         self.sink_label.pack(anchor=NW,padx=30)
 
         for x in (self.volume_canva, self.sink_label, self.frame1):
@@ -533,12 +547,35 @@ class GUI_handler:
         eval_command = lambda x: (lambda p: self.switch_active_sink(x))
         for x in self.sinks:
             root.bind(int(x[0])+1, eval_command(x[0]))
+        self.volume_canva.bind('<Enter>', self.on_vol_enter)
+        self.volume_canva.bind('<Leave>', self.on_vol_leave)
+
+    def toggle_input_moving(self,*arg):
+        global m_inputs
+        if m_inputs == 0:
+            m_inputs = 1
+            self.sink_label.configure(foreground='black')
+        else:
+            m_inputs = 0
+            self.sink_label.configure(foreground=vol_red2)
+        write_settings('m_inputs', m_inputs)
+
+    def on_vol_enter(self,*arg):
+        self.volcol = (vol_red2,vol_blue2)
+        self.redraw_volume_bar()
+    def on_vol_leave(self,*arg):
+        self.volcol = (vol_red,vol_blue)
+        self.redraw_volume_bar()
 
     def switch_active_sink(self,new_index):
         self.sink_label.config(text='Sink: '+self.sinks[int(new_index)][2])
         self.sink_index = int(self.sinks[int(new_index)][0])
         self.active_sink = self.sinks[self.sink_index]
         write_settings('default_sink',self.active_sink[0])
+        self.volume = self.active_sink[1]
+        self.redraw_volume_bar()
+        if m_inputs == 1:
+            move_inputs_to_sink(self.active_sink)
 
     def app_tab(self):
         global app_handler
@@ -570,20 +607,16 @@ class GUI_handler:
     def volume_UP(self,*arg):
         if self.volume < 150:
             self.volume += 5
-            try:
+            if self.active_tab == 'device':
                 self.redraw_volume_bar()
-            except:
-                pass
             self.timer2 = 160
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
             gui_handler.reset_timer()
     def volume_DOWN(self,*arg):
         if self.volume > 0:
             self.volume -= 5
-            try:
+            if self.active_tab == 'device':
                 self.redraw_volume_bar()
-            except:
-                pass
             self.timer2 = 160
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
             gui_handler.reset_timer()
@@ -591,10 +624,10 @@ class GUI_handler:
     def redraw_volume_bar(self):
         self.volume_canva.delete(ALL)
         if self.volume <= 100:
-            self.volume_canva.create_rectangle(2, 2, self.volume*500/178.571, 300/10+2, fill=vol_red, outline='')
+            self.volume_canva.create_rectangle(2, 2, self.volume*500/178.571, 300/10+2, fill=self.volcol[0], outline='')
         else:
-            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=vol_red, outline='')
-            self.volume_canva.create_rectangle(100*500/178.571, 2, self.volume*500/178.571-2, 300/10+2, fill=vol_blue, outline='')
+            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=self.volcol[0], outline='')
+            self.volume_canva.create_rectangle(100*500/178.571, 2, self.volume*500/178.571-2, 300/10+2, fill=self.volcol[1], outline='')
         self.volume_canva.create_text((0,(300/10+4)/2),anchor=W, text=' '+str(self.volume),
                                       font= ('Liberation sans', 16, 'bold'), fill='white')
 
@@ -633,18 +666,19 @@ class GUI_handler:
 default_sink = int(read_settings('default_sink=','0'))
 X_root = read_settings('X_root=','500')
 Y_root = read_settings('Y_root=','300')
-m_inputs = read_settings('m_inputs=','1')
-print default_sink, X_root, Y_root, m_inputs
+m_inputs = int(read_settings('m_inputs=',1))
 ## Global vars
 vol_grey = "#%02x%02x%02x" % (235,235,235)
 greyer = "#%02x%02x%02x" % (225,225,225)
 greyest = "#%02x%02x%02x" % (215,215,215)
-vol_red = "#%02x%02x%02x" % (255,100,100)
 dark_red = "#%02x%02x%02x" % (180,25,25)
 dark_red2 = "#%02x%02x%02x" % (220,70,70)
 dark = "#%02x%02x%02x" % (35,35,35)
 ldark = "#%02x%02x%02x" % (55,55,55)
+vol_red = "#%02x%02x%02x" % (255,100,100)
 vol_blue = "#%02x%02x%02x" % (80,80,150)
+vol_red2 = "#%02x%02x%02x" % (215,70,70)
+vol_blue2 = "#%02x%02x%02x" % (50,50,120)
 dblue = "#%02x%02x%02x" % (50,50,120)
 lblue = "#%02x%02x%02x" % (130,130,220)
 llblue = "#%02x%02x%02x" % (180,180,245)
