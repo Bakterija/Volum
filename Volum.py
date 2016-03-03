@@ -1,148 +1,110 @@
 #!/usr/bin/env python
-import pygame, os, find_sinks, subprocess
-startup = True
-sink = 0
-def reset_sinks():
-    global sink_list_index, sink_list, sink_count, sink_list_volume
-    sink_list_index, sink_list_volume, sink_name = [], [], []
-    sink_list = find_sinks.main()
-    sink_count = len(sink_list)
-    for x in sink_list:
-        sink_list_index.append(x[0])
-        sink_list_volume.append(x[1])
-        sink_name.append(x[2])
-    find_volume()
-    if startup == True:
-        print ('Available sinks: ', sink_name)
-        print ('Volume: ', sink_list_volume)
+import os, subprocess, sys
+from Tkinter import *
+from Tkinter import Button as tkButton
+from Tkinter import Label as tkLabel
+from ttk import Style as ttkStyle
+from ttk import Button
+from ttk import Checkbutton
+from ttk import Radiobutton
+from ttk import Combobox
+from ttk import Menubutton
+from ttk import Scale
+from ttk import Separator
+from ttk import Treeview
+from ttk import Label
+from ttk import Widget
+##from ttk import Frame as ttkFrame
+from threading import Thread
+from random import randrange
+from tkFileDialog import askopenfilename
+from tkFileDialog import askdirectory
+from tkColorChooser import askcolor
+from PIL import Image as Pillow_image
+from PIL import ImageTk
+import tkFont, tkMessageBox , time
 
-def find_sink_index(sink_list_index):
+def readf(filename):
+    file = filename
+    try:
+        f = open(file, 'rU')
+    except:
+        savef('',filename)
+        f = open(file, 'rU')
+    a = f.read()
+    a = str.splitlines(a)
+    f.close()
+    return a
+
+def savef(text,file):
+    f = open(file, 'w')
+    f.write(text)
+    f.close()
+
+def edit_settings(text,text_find,new_value):
     count = 0
-    found = False
-    for sinks in sink_list_index:
-        b = sinks.find(str(sink))
+    newlist = []
+    for lines in text:
+        b = lines.find(text_find)
         if b is not -1:
-            found = True
-            return count
+            c = text_find + '=' + str(new_value)
+            newlist.append(c)
+        else:
+            newlist.append(lines)
         count+=1
-    if found == False:
-        print ("WARNING: Couldn't find the saved sink, switching to sink 0")
-        global sink
-        sink = 0
-        find_sinks.write_settings('default_sink',sink)
-        return 0
+    count = 1
+    return newlist
 
-def find_volume():
-    global volume
-    count = 0
-    for numbers in sink_list:
-        b = numbers[0].find(str(sink))
+def read_settings(*arg):
+    global sys_path
+    a = readf('load/settings.ini')
+    a = get_settings(a,arg[0],arg[1])
+    return a
+
+def get_settings(text,text_find,default_value):
+    for lines in text:
+        b = lines.find(text_find)
         if b is not -1:
-            volume = numbers[1]
-        count += 1
+            c = lines[len(text_find):]
+    ## Checks if it exists and appends something, if not
+    try:
+        if c == '':
+            c = default_value
+            if default_value != '':
+                write_settings(text_find[:-1],'\n'+c)
+    except:
+        c = default_value
+        fh = open('load/settings.ini', 'a')
+        fh.write('\n'+str(text_find)+str(c))
+        fh.close()
+    return c
 
-pygame.init()
-pygame.display.set_caption('Volume')
-icon = pygame.image.load('load/volum.png')
-pygame.display.set_icon(icon)
-sink = int(find_sinks.read_settings('default_sink = '))
-scx = int(find_sinks.read_settings('X_window_size = '))
-scy = int(find_sinks.read_settings('Y_window_size = '))
-Display = pygame.display.set_mode((scx,scy))
-print ('-------------------- Loading ------------------------')
-print ('Surface size is: ', scx,'x', scy)
-reset_sinks()
-sink_index = int(find_sink_index(sink_list_index))
-print ('Default sink: ', sink_list[sink_index])
-eq_pic = pygame.image.load('load/eqpic.png')
-eq_pic_hov = pygame.image.load('load/eqpic_hov.png')
-clock = pygame.time.Clock()
-check_equalizer = '0'
-volume = 50
-find_volume()
+def write_settings(text_find,new_value):
+    global sys_path
+    a = readf('load/settings.ini')
+    a = edit_settings(a,text_find,new_value)
+    text = a = '\n'.join(str(e) for e in a)
+    savef(text,'load/settings.ini')      
 
-white = (255,255,255)
-grey = (235,235,235)
-greyer = (225,225,225)
-greyest =(215,215,215)
-red = (255,100,100)
-dark_red = (180,25,25)
-dark_red2 = (220,70,70)
-black = (0,0,0)
-dark = (35,35,35)
-ldark = (55,55,55)
-blue = (80,80,150)
-dblue = (50,50,120)
-lblue = (130,130,220)
-llblue = (180,180,245)
-green = (0,255,0)
-blgr = (34,67,79)
-yellow = (200,200,120)
+def return_picture(path):
+    img = Pillow_image.open(path)
+    img = ImageTk.PhotoImage(img)
+    return img
 
-## Switch colors
-##black = greyer
-##white = yellow
-##greyest = ldark
-##grey = dark
-##red = dark_red2
+def set_winicon(window,path):
+    try:
+        img = Pillow_image.open(path)
+        img = ImageTk.PhotoImage(img)
+        window.tk.call('wm', 'iconphoto', window._w, img)
+    except:
+        print "Couldn't load Linux icon"
 
-
-def draw_picture(x,y,picture):
-    Display.blit(picture,(x,y))
-    
-def draw_text(text,variable,x,y,size,color,font):
-    if font == 1:
-        font_path = ('load/font.ttf')
-    else:
-        font_path = ('load/font2.ttf')
-    font = pygame.font.Font(font_path,size)
-    text = font.render((text + str(variable)), True, color)
-    Display.blit(text, (x,y))
-
-def draw_bar(bar_x, bar_y, bar_w, bar_h, color):  
-    pygame.draw.rect(Display, color, [bar_x, bar_y, bar_w, bar_h])
-
-def check_mouse_hover(x_list,m_pos,redraw,hover_var,custom_xlen):
-    for obs in x_list:
-        if obs[hover_var] == True:
-            if custom_xlen == False:
-                custom_xlen2 = obs[2]
-            else:
-                custom_xlen2 = custom_xlen
-            if m_pos[0] > obs[0]+custom_xlen2 or m_pos[0] < obs[0] or m_pos[1] < obs[1] or m_pos[1] > obs[1]+obs[3]:
-                obs[hover_var] = False
-                redraw = True
-    for obs in x_list:
-        if obs[hover_var] == False:
-            if custom_xlen == False:
-                custom_xlen2 = obs[2]
-            else:
-                custom_xlen2 = custom_xlen
-            if m_pos[0] < obs[0]+custom_xlen2 and m_pos[0] > obs[0]:
-                if m_pos[1] < obs[1]+obs[3] and m_pos[1] > obs[1]:
-                    obs[hover_var] = True
-                    redraw = True
-##    print (x_list)
-    return x_list, redraw
-
-def higher():
-    global volume, volume_timer, reset_timer
-    volume+=5
-    if volume > 150:
-        volume = 150
-    volume_timer = reset_timer
-
-def lower():
-    global volume, volume_timer, reset_timer
-    volume-=5
-    if volume < 0:
-        volume = 0
-    volume_timer = reset_timer
-
-def sys_arg_volum(volume):
-    global sink
-    volume = volume*655
-    subprocess.Popen('pacmd set-sink-volume %s %s' % (sink, volume), shell=True,stdout=subprocess.PIPE)
+def subprocess_return(INPUT):
+##        INPUT = 'pacmd list-sink-inputs'
+        cmd_FORMAT = INPUT.split()
+        output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
+        output = str(output)
+        return output
 
 def equalizer(equalizer_c):
     if equalizer_c == 'pulse-eq-gtk':
@@ -150,371 +112,574 @@ def equalizer(equalizer_c):
     elif equalizer_c == 'qpaeq':
         os.system("qpaeq")
 
-def switch_sink_inputs(count,new_default):
-    new_default = int(new_default)
-    inputs_to_move = find_sinks.change_sink()
-    os.system("load/./set_default_sink.sh %s" % (new_default))
-    for inputs in inputs_to_move:
-        os.system("load/./switch_inputs.sh %s %s" % (inputs[0],new_default))
-    print ('Switched: ', inputs_to_move,' to ', sink_list[count])
-
-def switch_sink_input(inputs,new_default):
-    new_default = int(new_default)
-    os.system("load/./switch_inputs.sh %s %s" % (inputs,sink_list_index[new_default]))
-    print ('Switched: ', inputs ,' to ', new_default)
-
-def reset_inputs_list():
-    #Pulse_Audio: index, media.name, volume%, sink_index, application.name
-    input_list = find_sinks.change_sink()
-    text_list = []
-    bar_list = []
-    bar_list2 = []
-    bar_list3 = []
-    offset = 0
-    for inputs in input_list:
-        offsetx = 0
-        try:
-            if len(inputs[4]) > 17:
-                inputs[4] = inputs[4][:17] + '..'
-        except:
-            inputs.append(inputs[1])
-            if len(inputs[4]) > 17:
-                inputs[4] = inputs[4][:17] + '..'
-        text_list.append(['',inputs[4],40,40+offset,16,black,2])
-        bar_list.append([199,39+offset,120*1.5+2,15+2,black])
-        bar_list2.append([200,40+offset,inputs[2]*1.5,15,red,0])
-        for sinks in sink_list:
-            text_list.append(['',sinks[2][0:2],400+offsetx,40+offset,16,black,2])
-            offsetx+=25
-        offset += 30
-    offset, offsetx, count = 0, 0, 0
-    for inputs in input_list:
-        for sinks in sink_list:
-            if int(inputs[3]) == int(sinks[0]):
-                bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],inputs[3]])
-            else:
-                bar_list3.append([398+offsetx,38+offset,24,22,lblue,0,inputs[0],-1])
-            count +=1
-            offsetx += 25
-        offset += 30
-        offsetx, count = 0, 0
-    return input_list, text_list, bar_list, bar_list2, bar_list3
-
-def switch_sink(sink_list_index,num,moving_inputs):
-    print ("Default sink set to ",sink_list_index)
-    sink = sink_list_index
-    sink_index = num
-    if moving_inputs == True:
-        switch_sink_inputs(num,sink)
-    find_sinks.write_settings('default_sink',sink)
-    reset_sinks()
-    return sink, sink_index
-
 def set_input_volume(index,volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
+    print index,volume
+    gui_handler.reset_timer()
+
+def set_sink_volume(index,volume):
+    volume = volume*655
+    subprocess.Popen('pacmd set-sink-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
+    print index,volume
+    gui_handler.reset_timer()
+
+def switch_input_sink(index,new_index):
+    subprocess.Popen('pacmd move-sink-input %s %s' % (index, new_index), shell=True,stdout=subprocess.PIPE)
+    print index, new_index
+    gui_handler.reset_timer()
+
+class PA_controller:
+    def __init__(self):
+        print '-'*21+'PA_controller __init__'+'-'*21+'\n'+'-'*64
+        self.reload_gui = False
+        self.startup = True
+        self.sink_inputs2, self.sinks2 = [], []
+        self.reset_sinks_inputs()
+##        self.reset_sinks_inputs()
+
+    def return_sinks(self):
+        return self.sinks
+
+    def return_inputs(self):
+        return self.sink_inputs
+
+    def reset_sinks_inputs(self):
+        if self.reload_gui == False:
+            if self.startup == False:
+                self.sink_inputs2, self.sinks2 = self.sink_inputs, self.sinks
+            self.sink_inputs =  subprocess_return('pacmd list-sink-inputs')
+            self.sink_inputs = self.sink_inputs.splitlines()
+            self.sink_inputs = self.get_sink_inputs(self.sink_inputs)
+            if self.startup == True:
+                print '[index]  [media.name]  [volume]  [sink]  [application.name]'
+                for x in self.sink_inputs:
+                    print '[%s - %s - %s - %s - %s]' % (x[0], x[1], x[2], x[3], x[4])
+                print '-'*64+'\n'+'-'*64
+            self.sinks = subprocess_return('pacmd list-sinks')
+            self.sinks = self.sinks.splitlines()
+            self.sinks = self.get_sinks(self.sinks)
+            if self.startup == True:
+                print '[index]  [volume] [alsa.name]  [application.name]'
+                for x in self.sinks:
+                    print '[%s - %s - %s - %s]' % (x[0], x[1], x[2], x[3])
+                print '-'*64+'\n'+'-'*64
+            if self.sink_inputs != self.sink_inputs2 or self.sinks != self.sinks2:
+                self.reload_gui = True
+            if self.startup == True:
+                self.startup = False
+            
+    def get_sinks(self,a):
+        li_count = 0
+        index = -1
+        newlist = []
+        ## 0index, 1volume, 2name
+        newlist2 = []
+        for lines in a:
+            b = lines.find('index:')
+            if b is not -1:
+                newlist.append([lines[b+7:]])
+                newlist2.append([lines[b+7:]])
+        for lines in a:
+            b = lines.find('index:')
+            if index > -1:
+                newlist[index].append(lines)
+            if b is not -1:
+                index += 1
+        index = 0
+        for indexes in newlist:
+            for text in indexes:
+                b = text.find('alsa.name')
+                if b is not -1:
+                    newlist2[index].append(text[b+13:-1])
+                b = text.find('volume:')
+                if b is not -1:
+                    c = text.find('base volume:')
+                    if c is -1:
+                        b = text.find('%')
+                        newlist2[index].append(int(text[b-3:b]))
+            index+=1
+        count = 0
+        for x in newlist2:
+            if len(x) < 3:
+    ##            newlist2.pop(count)
+                newlist2[count].append('Noname')
+            count+= 1
+        count = 0
+        for x in newlist2:
+            x.append(count)
+            count+= 1
+        return newlist2
+
+    def get_sink_inputs(self,a):
+        li_count = 0
+        index = -1
+        app_index = []
+        app_name = []
+        app_volume = []
+        app_sink_index = []
+        newlist = []
+        newlist2 = []
+        templist = []
+        for lines in a:
+            b = lines.find('index:')
+            if b is not -1:
+                newlist.append([lines[b+7:]])
+                newlist2.append([lines[b+7:]])
+        for lines in a:
+            b = lines.find('index:')
+            if index > -1:
+                newlist[index].append(lines)
+            if b != -1:
+                index += 1
+        index = 0
+        for indexes in newlist:
+##            print '\n\n'
+            media_name,app_volume,app_sink,app_name = 'n/a','n/a','n/a','n/a'
+            for lines in indexes:
+##                print index,'\n',lines
+                b = lines.find('media.name')
+                if b is not -1:
+                    media_name = lines[b+14:-1]
+                b = lines.find('volume:')
+                if b is not -1:
+                    c = lines.find('base volume:')
+                    if c is -1:
+                        b = lines.find('%')
+                        app_volume = int(lines[b-3:b])
+                b = lines.find('sink: ')
+                if b is not -1:
+                    try:
+                        app_sink = int(lines[7:10])
+                    except:
+                        app_sink = int(lines[7:9])
+                b = lines.find('application.name = ')
+                if b is not -1:
+                    app_name = lines[3+len('application.name = '):-1]
+            newlist2[index].append(media_name)
+            newlist2[index].append(app_volume)
+            newlist2[index].append(app_sink)
+            newlist2[index].append(app_name)
+            index+= 1
+        return newlist2
+
+def get_dict_item(dictio,item,default):
+    for k, v in dictio.iteritems():
+        if k == item:
+            return v
+    return default
+
+class msg_binder:
+    def __init__(self,frame,**kwargs):
+        text = get_dict_item(kwargs,'text','None')
+        font = get_dict_item(kwargs,'font','Arial')
+        width = get_dict_item(kwargs,'width','+10')
+        height = get_dict_item(kwargs,'height','+5')
+        self.fg = get_dict_item(kwargs,'fg','black')
+        self.fg_hov = get_dict_item(kwargs,'fg_hov','')
+        self.bg = get_dict_item(kwargs,'bg','')
+        self.bg_hov = get_dict_item(kwargs,'bg_hov','')
+        self.function = get_dict_item(kwargs,'func','False')
+        self.function_exc = get_dict_item(kwargs,'command','False')
+        self.img = get_dict_item(kwargs,'img','')
+        self.img_hov = get_dict_item(kwargs,'img_hov','')
+
+        if self.img == '':
+            self.msg = Message(frame, text=text, width=width)
+            self.msg.config(bg=self.bg, fg=self.fg, width=width, font=font)
+        else:
+            self.msg = Label(frame, image=self.img, width=width, background=self.bg)
+
+        self.msg.bind("<Enter>", self._enter)
+        self.msg.bind("<Leave>", self._leave)
+        self.msg.bind("<Button-1>", self._click)
+
+    def destroy(self):
+        self.msg.destroy()
+
+    def pack(self,**kwargs):
+        side = get_dict_item(kwargs,'side','top')
+        anchor = get_dict_item(kwargs,'anchor','nw')
+        padx = get_dict_item(kwargs,'padx','0')
+        pady = get_dict_item(kwargs,'pady','0')
+        self.msg.pack(side=side, anchor=anchor, padx=padx, pady=pady)
+
+    def _enter(self, event):
+        self.msg.config(cursor="hand2")
+        if self.fg_hov != '':
+            self.msg.config(fg=self.fg_hov)
+        if self.bg_hov != '':
+            self.msg.config(bg=self.bg_hov)
+        if self.img_hov != '':
+            self.msg.config(image= self.img_hov)
+
+    def _leave(self, event):
+        self.msg.config(cursor="")
+        if self.fg_hov != '':
+            self.msg.config(fg=self.fg)
+        if self.bg_hov != '':
+            self.msg.config(bg=self.bg)
+        if self.img_hov != '':
+            self.msg.config(image= self.img)
+
+    def _click(self, event):
+        if self.function == 'func':
+            self.function_exc()
+        elif self.function == 'link' and self.function_exc != 'none':
+            open_address_in_webbrowser(self.function_exc)
+
+
+def printeris(*arg):
+    print 'printeris'
+    for x in arg:
+        print arg
+
+
+class App_handler:
+    def __init__(self, parent, **kwargs):
+        bg = get_dict_item(kwargs,'bg','red')
+        self.frame_list = []
+        self.app_placement = 0
+        self.app_place_interval = 30
+        self.parent = parent
+        self.create_frame(bg)
         
-def main_loop():
-    global volume, volume_timer, reset_timer, startup, sink_index, sink
-    global check_equalizer
-    reset_timer = int(find_sinks.read_settings('timer = '))
-    moving_inputs = int(find_sinks.read_settings('m_inputs = '))
-    sink_index = int(find_sink_index(sink_list_index))
-    ##Button_list: 0X, 1Y, 2xlen, 3ylen, 4color, 5color_hover, 6command, 7hover
-    button_list = [[38, 10, 56, 20, grey, llblue, 'Global::', False,14],[100, 10, 76, 20, grey, llblue, 'Programs::', False,14]]
-    mouse_pos = pygame.mouse.get_pos()
-    button_list[0][4], button_list[1][4] = greyest, grey
-    if reset_timer < 0:
-        reset_timer = 0
-    inputs = find_sinks.change_sink()
-    if startup == True:
-        print ('Inputs: ', inputs)
-        print ('Moving inputs: ', moving_inputs)
-        if os.path.exists('/usr/bin/qpaeq') == True:
-            check_equalizer = 'qpaeq'
-        if os.path.exists('/usr/local/bin/qpaeq') == True:
-            check_equalizer = 'qpaeq'
-        if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
-            check_equalizer = 'pulse-eq-gtk'
-        if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
-            check_equalizer = 'pulse-eq-gtk'
-        if check_equalizer == '0' :
-            print 'Equalizer not found'
-        else:
-            print check_equalizer,'found'
-        print ('----------------------- Done ------------------------>')
-        startup = False
-    sink_reset_timer = 200
-    redraw = True
-    eq_hov = False
-    eq_draw = eq_pic
-    volume_timer = -9001
-    oldsinks = find_sinks.main()
-    newsinks = find_sinks.main()
-    reset_sinks()
-    while True:
-        if volume_timer > 0:
-            volume_timer -= 1
-        if sink_reset_timer > 0:
-            sink_reset_timer -= 1
-        else:
-            oldsinks = list(newsinks)
-            newsinks = find_sinks.main()
-            sink_reset_timer = 60
-            if newsinks != oldsinks:
-                reset_sinks()
-                redraw = True
-        for event in pygame.event.get():
-            mouse_pos = pygame.mouse.get_pos()
-            sink_reset_timer = 200
-                
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+    def create_frame(self, bg):
+        self.frame = Frame(self.parent, width=X_root, height=Y_root,bg=bg)
+        self.frame.pack_propagate(0)
+        self.frame.pack()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_d and volume<150:
-                    higher()
-                    redraw = True
-                if event.key == pygame.K_a and volume>0:
-                    lower()
-                    redraw = True
-                if event.key == pygame.K_RIGHT and volume<150:
-                    higher()
-                    redraw = True     
-                if event.key == pygame.K_LEFT and volume>0:
-                    lower()
-                    redraw = True
-                if event.key == pygame.K_F2:
-                    reset_sinks()
-                    program_loop(button_list)
-                if event.key == pygame.K_e:
-                    stop = False
-                    if moving_inputs == 0:
-                        moving_inputs = 1
-                        stop = True
-                        print ('Moving inputs')
-                    if moving_inputs == 1 and stop == False:
-                        moving_inputs = 0
-                        print ('Not moving inputs')
-                    find_sinks.write_settings('m_inputs',moving_inputs)
-                    redraw = True
-                if event.key == pygame.K_1:
-                    if sink_count > 0:
-                        sink, sink_index = switch_sink(sink_list_index[0],0,moving_inputs)
-                        find_volume()
-                        redraw = True
-                if event.key == pygame.K_2:
-                    if sink_count > 1:
-                        sink, sink_index = switch_sink(sink_list_index[1],1,moving_inputs)
-                        find_volume()
-                        redraw = True
-                if event.key == pygame.K_3:
-                    if sink_count > 2:
-                        sink, sink_index = switch_sink(sink_list_index[2],2,moving_inputs)
-                        find_volume()
-                        redraw = True
-                if event.key == pygame.K_4:
-                    if sink_count > 3:
-                        sink, sink_index = switch_sink(sink_list_index[3],3,moving_inputs)
-                        find_volume()
-                        redraw = True
-                if event.key == pygame.K_5:
-                    if sink_count > 4:
-                        sink, sink_index = switch_sink(sink_list_index[4],4,moving_inputs)
-                        find_volume()
-                        redraw = True
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4:
-                    higher()
-                    redraw = True
-                if event.button == 5:
-                    lower()
-                    redraw = True
-                elif event.button == 1:
-                    if check_equalizer is not 0:
-                        if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
-                            if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
-                                equalizer(check_equalizer)
-                                redraw = True
-                    if mouse_pos[0] < scx/3.57 and mouse_pos[0] > scx/12.5:
-                            if mouse_pos[1] < scy/3 and mouse_pos[1] > scy/3.75+4:
-                                reset_sinks()
-                                redraw = True
-                                
-                    for x in button_list:
-                        if x[7] == True:
-                            if x[6] == 'Global::':
-                                main_loop()
-                            if x[6] == 'Programs::':
-                                reset_sinks()
-                                program_loop(button_list)
+        self.parent.bind('<Button-5>', self.frame_place_UP)
+        self.parent.bind('<Button-4>', self.frame_place_DOWN)
+        self.frame.bind('<Button-5>', self.frame_place_UP)
+        self.frame.bind('<Button-4>', self.frame_place_DOWN)
+        self.frame.bind('<f>', self.reset)
 
-            button_list, redraw = check_mouse_hover(button_list,mouse_pos,redraw,7,False)
-            if mouse_pos[0] < scx/12.5+64 and mouse_pos[0] > scx/12.5:
-                if mouse_pos[1] < scy/1.5+64 and mouse_pos[1] > scy/1.5:
-                    eq_draw = eq_pic_hov
-                    redraw = True
-                    eq_hov = True            
+    def add(self, parent, index, **kwargs):
+        media_name = get_dict_item(kwargs,'media_name','n/a')
+        volume = int(get_dict_item(kwargs,'volume', 50))
+        sink = int(get_dict_item(kwargs,'sink', 0))
+        app_name = get_dict_item(kwargs,'app_name', 'n/a')
+        y_adjustment = 0 + self.app_placement +(self.app_place_interval* len(self.frame_list))
+        App_frame(self.frame, index, y_adjustment, media_name, volume, sink, app_name)
+        self.frame_list[-1].bind('<Button-5>', self.frame_place_UP)
+        self.frame_list[-1].bind('<Button-4>', self.frame_place_DOWN)
 
-            if eq_hov == True:
-                if mouse_pos[0] > scx/12.5+48 or mouse_pos[0] < scx/12.5 or mouse_pos[1] > scy/1.5+48 or mouse_pos[1] < scy/1.5:
-                    eq_draw = eq_pic
-                    redraw = True
-                    eq_hov = False
-                  
-        if volume_timer == 0:
-            volume_timer -= 9001
-            sys_arg_volum(volume)
-                    
-        if redraw == True:
-            Display.fill(grey)
-
-            draw_bar(scx/12.5-2,scy/7.5-2,150*scx/178.571+4,scy/10+4,black)
-            if volume <105:
-                draw_bar(scx/12.5,scy/7.5,volume*scx/178.571,scy/10,red)
-            if volume > 100:
-                draw_bar(scx/12.5,scy/7.5,100*scx/178.571,scy/10,red)
-                draw_bar(scx/12.5+100*scx/178.571,scy/7.5,(volume-100)*scx/178.571,scy/10,blue)
-            draw_text('',volume,scx/12.5+5,scy/7.5+2,22,white,1)
-            if moving_inputs == True:
-                draw_text('Sink: ',sink_list[sink_index][2],scx/12.5+2,scy/3.75+2,18,black,2)
+    def reset(self,bg):
+        self.frame.destroy()
+        self.frame_list = []
+        self.create_frame(bg)
+  
+    def placement_task(self, *arg):
+        adj = 0
+        for x in self.frame_list:
+            if self.app_placement+adj < 0:
+                x.place_configure(y=6200)
             else:
-                draw_text('Sink: ',sink_list[sink_index][2],scx/12.5+2,scy/3.75+2,18,dark_red,2)
-            for x in button_list:
-                if x[7] == True:
-                    draw_bar(x[0],x[1],x[2],x[3],x[5])
-                else:
-                    draw_bar(x[0],x[1],x[2],x[3],x[4])
-                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],black,2)
-            
-            if check_equalizer is not 0:
-                draw_picture(scx/12.5,scy/1.5,eq_draw)
-                    
-            pygame.display.update()
-            redraw = False
-            
-        clock.tick(60)
+                x.place_configure(y=adj+self.app_placement)
+            adj+= self.app_place_interval
+    def frame_place_UP(self, *arg):
+        self.app_placement -= self.app_place_interval/2
+        self.frame.after(2, self.placement_task)
+    def frame_place_DOWN(self, *arg):
+        self.app_placement += self.app_place_interval/2
+        self.frame.after(2, self.placement_task)
 
-def program_loop(button_list):
-    global volume_timer, reset_timer, sink, sink_list, sink_list_index, sink_count
-    input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
-    button_list[0][4], button_list[1][4] = grey, greyest
-    ##Bar lists: 0X, 1Y, 2Width, 3Height, 4Color, 5Hover)
-    bar2 = 120*1.5
-    bar3 = 22
-    mouse_pos = [0,0]
-    moved_pixels = 0
-    input_reset_timer = 60
-    redraw = True
-    while True:
-        for event in pygame.event.get():
-            mouse_pos = pygame.mouse.get_pos()
-                
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_F1:
-                    main_loop()
-                if event.key == pygame.K_r:
-                    input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
-                    redraw = True
-                
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4:
-                    count, move = 0, 1
-                    for bar in bar_list2:
-                        if bar[5] == 1:
-                            move = 0
-                            if input_list[count][2] < 120:
-                                input_list[count][2] += 5
-                                if input_list[count][2] > 120:
-                                    input_list[count][2] = 120
-                                bar[2] = input_list[count][2]*1.5
-                                set_input_volume(input_list[count][0],input_list[count][2])
-                        count += 1
-                    if move == 1 and moved_pixels < 0:
-                        moved_pixels += 10
-                    redraw = True
-                if event.button == 5:
-                    count, move = 0, 1
-                    for bar in bar_list2:
-                        if bar[5] == 1:
-                            move = 0
-                            if input_list[count][2] > 0:
-                                input_list[count][2] -= 5
-                                if input_list[count][2] < 0:
-                                    input_list[count][2] = 0
-                                bar[2] = input_list[count][2]*1.5
-                                set_input_volume(input_list[count][0],input_list[count][2])
-                        count += 1
-                    if move == 1:
-                        moved_pixels -= 10
-                    redraw = True
-                elif event.button == 1:
-                    for x in button_list:
-                        if x[7] == True:
-                            if x[6] == 'Global::':
-                                main_loop()
-                            if x[6] == 'Programs::':
-                                program_loop(button_list)
-                    count = 0
-                    for bar in bar_list3:
-                        if bar[5] == 1:
-                            if bar[0] == 398:
-                                switch_sink_input(int(bar[6]),0)
-                            if bar[0] == 398+25:
-                                switch_sink_input(int(bar[6]),1)
-                            if bar[0] == 398+50:
-                                switch_sink_input(int(bar[6]),2)
-                            input_list, text_list, bar_list,bar_list2, bar_list3 = reset_inputs_list()
-                            redraw = True
+class App_frame:
+    def __init__(self, parent, index, y_adjustment, media_name, volume, sink, app_name):
+        global app_handler
+        self.parent = parent
+        self.index = index
+        self.y_adj = y_adjustment
+        self.media_name = media_name
+        self.volume = volume
+        self.sink = str(sink)
+        self.app_name = app_name
+        self.canva_hov = False
+        self.button_list = []
 
-            ## 0x_list, 1m_pos, 2redraw, 3hover_var, 4custom_xlen
-            bar_list2, redraw = check_mouse_hover(bar_list2,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,5,bar2)
-            bar_list3, redraw = check_mouse_hover(bar_list3,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,5,bar3)
-            button_list, redraw = check_mouse_hover(button_list,(mouse_pos[0],mouse_pos[1]-moved_pixels),redraw,7,False)
-                        
-        if redraw == True:
-            Display.fill(grey)
-            ## Under Volume bars
-            for bar in bar_list:
-                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
-            ## Volume bars
-            for bar in bar_list2:
-                if bar[5] == 0:
-                    if bar[2] > 150:
-                        draw_bar(bar[0],bar[1]+moved_pixels,150,bar[3],bar[4])
-                        draw_bar(bar[0]+150,bar[1]+moved_pixels,bar[2]-150,bar[3],blue)
-                    else:
-                        draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
-                else:
-                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],blue)
-                draw_text('',int(bar[2]/1.5),bar[0]+5,bar[1]+1+moved_pixels,12,white,1)
-            ## Device buttons
-            for bar in bar_list3:
-                if bar[7] > -1:
-                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],green)
-                if bar[7] == -1:
-                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],bar[4])
-                if bar[5] == 1:
-                    draw_bar(bar[0],bar[1]+moved_pixels,bar[2],bar[3],red)
-            for text in text_list:
-                draw_text(text[0],text[1],text[2],text[3]+moved_pixels,text[4],text[5],text[6])
-            draw_bar(0,0,scx,scy/8,grey)
-            for x in button_list:
-                if x[7] == True:
-                    draw_bar(x[0],x[1],x[2],x[3],x[5])
-                else:
-                    draw_bar(x[0],x[1],x[2],x[3],x[4])
-                draw_text(x[6],'',x[0]+3,x[1]+2,x[8],black,2)
-            redraw = False
-            pygame.display.update()
-            
-        clock.tick(60)
+        self.frame = Frame(parent, width=int(X_root)-60, height=20,bg=gui_handler.bg_color)
+        self.frame.pack_propagate(0)
+        self.frame.place(x=30, y=self.y_adj)
+        self.frame_btn = Frame(self.frame, height=20,bg=gui_handler.bg_color)
+        self.frame_btn.pack(side=RIGHT)
+        app_handler.frame_list.append(self.frame)
+
+        self.name = Label(self.frame, text=self.app_name, font=('Droid sans',12,'normal'), background=gui_handler.bg_color)
+        self.name.pack(side=LEFT)
+
+        self.add_sink_buttons()
+
+        self.canva = Canvas(self.frame, width=180, height=20,
+                                   bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
+        self.canva.pack(side=RIGHT,padx=10)
+        self.redraw_volume()
+
+
+        self.canva.bind('<Enter>', self.on_enter)
+        self.canva.bind('<Leave>', self.on_leave)
+        self.canva.bind('<Button-4>', self.volume_UP)
+        self.canva.bind('<Button-5>', self.volume_DOWN)
+
+    def add_sink_buttons(self):
+        eval_command = lambda x,x2: (lambda : self.switch_sink(x,x2))
+        for x in gui_handler.sinks:
+            bgcol = lblue
+            if self.sink == x[0]:
+                bgcol = vol_green
+            btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=20, bg_hov=vol_red, font=('Droid sans',11,'normal')
+                             ,func='func', command= eval_command(self.index,x[0]))
+            btn.pack(side=RIGHT,padx=2)
+            self.button_list.append(btn)
+    def reset_sink_buttons(self):
+        for x in self.button_list:
+            x.destroy()
+        self.add_sink_buttons()
+
+    def redraw_volume(self):
+        self.canva.delete(ALL)
+        volume = float(self.volume)
+        if self.canva_hov == False:
+            if self.volume <= 100:
+                self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_red, outline='')
+            else:
+                self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_red, outline='')
+                self.canva.create_rectangle(150, 1, volume/100*150, 19, fill=vol_blue, outline='')
+        else:
+            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=vol_blue, outline='')
+        self.canva.create_text((0,10),anchor=W, text=' '+str(self.volume),
+                                      font= ('Liberation sans', 11, 'bold'), fill='white')
+
+    def on_enter(self,*arg):
+        self.canva_hov = True
+        self.redraw_volume()
+    def on_leave(self,*arg):
+        self.canva_hov = False
+        self.redraw_volume()
+
+    def volume_UP(self,*arg):
+        if self.volume < 120:
+            self.volume += 5
+            self.redraw_volume()
+            gui_handler.timer2 = 160
+            gui_handler.reset_timer()
+            gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
+    def volume_DOWN(self,*arg):
+        if self.volume > 0:
+            self.volume -= 5
+            self.redraw_volume()
+            gui_handler.timer2 = 160
+            gui_handler.reset_timer()
+            gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
+                                      
+    def switch_sink(self,index,new_index):
+        switch_input_sink(index,new_index)
+        self.sink = new_index
+        self.reset_sink_buttons()
+
+
+
+class GUI_handler:
+    def __init__(self):
+        self.eq_picture = return_picture('load/eqpic.png')
+        self.eq_picture_hov = return_picture('load/eqpic_hov.png')
+        self.bg_frame1 = '#DCDCDC'
+        self.bg_color = '#EBEBEB'
+        self.label_color = '#E1E1E1'
+        self.timer = 1500
+        self.timer2 = -99
+        self.timed_event = None
+        self.sinks = pac.return_sinks()
+        self.sink_index = int(default_sink)
+        self.active_sink = self.sinks[self.sink_index]
+        self.volume = self.active_sink[1]
+        self.inputs = pac.return_inputs()
         
-main_loop()
-pygame.quit()
-quit()
+        root.config(bg=self.bg_color)
+        self.frame1 = Frame(root)
+        self.device_tab()
+
+        root.bind('<F1>', lambda x: self.device_tab())
+        root.bind('<F2>', lambda x: self.app_tab())
+        root.after(100, self.timer_task)
+        root.after(20, self.timer2_task)
+        
+    def device_tab(self):
+        self.active_tab = 'device'
+        self.add_tab_buttons()
+        self.volume_canva = Canvas(self.frame1, width=150*500/178.571+4, height=300/10+4,
+                                   bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
+        self.volume_canva.pack(anchor=NW,padx=30,pady=10)
+        self.redraw_volume_bar()
+
+        self.eq_button = msg_binder(self.frame1, img=self.eq_picture, img_hov=self.eq_picture_hov, bg=self.bg_color,
+                                    func='func', command=lambda : equalizer(check_equalizer))
+        self.eq_button.pack(side=BOTTOM,padx=30,pady=30)
+
+        self.sink_label = Label(self.frame1, text='Sink: '+self.active_sink[2], font=('Droid sans',14,'normal'),
+                                foreground='black', background=self.bg_color)
+        self.sink_label.pack(anchor=NW,padx=30)
+
+        for x in (self.volume_canva, self.sink_label, self.frame1):
+            x.bind('<Button-4>', self.volume_UP)
+            x.bind('<Button-5>', self.volume_DOWN)
+        root.bind('<Right>', self.volume_UP)
+        root.bind('<Left>', self.volume_DOWN)
+        root.bind('<Up>', self.volume_UP)
+        root.bind('<Down>', self.volume_DOWN)
+        root.bind('<d>', self.volume_UP)
+        root.bind('<a>', self.volume_DOWN)
+        eval_command = lambda x: (lambda p: self.switch_active_sink(x))
+        for x in self.sinks:
+            root.bind(int(x[0])+1, eval_command(x[0]))
+
+    def switch_active_sink(self,new_index):
+        self.sink_label.config(text='Sink: '+self.sinks[int(new_index)][2])
+        self.sink_index = int(self.sinks[int(new_index)][0])
+        self.active_sink = self.sinks[self.sink_index]
+        write_settings('default_sink',self.active_sink[0])
+
+    def app_tab(self):
+        global app_handler
+        self.active_tab = 'app'
+        self.add_tab_buttons()
+        self.app_list = []
+        # places application frames
+        app_handler = App_handler(self.frame1, bg=self.bg_color)
+        for x in self.inputs:
+            app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+        
+    def add_tab_buttons(self):
+        self.frame1.destroy()
+        self.frame1 = Frame(root, width=X_root, height=Y_root,bg=self.bg_color)
+        self.frame1.pack_propagate(0)
+        self.frame1.pack()
+        self.frame2 = Frame(self.frame1, width=X_root, height=20,bg=self.bg_color)
+        self.frame2.pack_propagate(0)
+        self.frame2.pack(padx=30, pady=10)
+
+        # Device:: / App:: buttons
+        self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
+                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.device_tab)
+        self.device_btn.pack(side=LEFT)
+        self.device_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
+                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.app_tab)
+        self.device_btn.pack(side=LEFT,padx=10)
+
+    def volume_UP(self,*arg):
+        if self.volume < 150:
+            self.volume += 5
+            try:
+                self.redraw_volume_bar()
+            except:
+                pass
+            self.timer2 = 160
+            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
+            gui_handler.reset_timer()
+    def volume_DOWN(self,*arg):
+        if self.volume > 0:
+            self.volume -= 5
+            try:
+                self.redraw_volume_bar()
+            except:
+                pass
+            self.timer2 = 160
+            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
+            gui_handler.reset_timer()
+            
+    def redraw_volume_bar(self):
+        self.volume_canva.delete(ALL)
+        if self.volume <= 100:
+            self.volume_canva.create_rectangle(2, 2, self.volume*500/178.571, 300/10+2, fill=vol_red, outline='')
+        else:
+            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=vol_red, outline='')
+            self.volume_canva.create_rectangle(100*500/178.571, 2, self.volume*500/178.571-2, 300/10+2, fill=vol_blue, outline='')
+        self.volume_canva.create_text((0,(300/10+4)/2),anchor=W, text=' '+str(self.volume),
+                                      font= ('Liberation sans', 16, 'bold'), fill='white')
+
+    def refresh(self):
+        pac.reset_sinks_inputs()
+        if pac.reload_gui == True:
+            pac.reload_gui = False
+            self.sinks = pac.return_sinks()
+            self.inputs = pac.return_inputs()
+            self.active_sink = self.sinks[self.sink_index]
+            if self.active_tab == 'device':
+                self.volume = self.active_sink[1]
+                self.redraw_volume_bar()
+            elif self.active_tab == 'app':
+                app_handler.reset(self.bg_color)
+                for x in self.inputs:
+                    app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+    def timer_task(self):
+        self.timer -= 100
+        if self.timer < 0:
+            self.reset_timer()
+            self.refresh()
+        root.after(100, self.timer_task)
+    def timer2_task(self):
+        if self.timer2 > 0:
+            self.timer2 -= 20
+            if self.timer2 == 0:
+                self.timed_event()
+                self.timer2 = -99
+        root.after(20, self.timer2_task)
+    def reset_timer(self):
+        self.timer = 1000
+    
+        
+## Load settings
+default_sink = int(read_settings('default_sink=','0'))
+X_root = read_settings('X_root=','500')
+Y_root = read_settings('Y_root=','300')
+m_inputs = read_settings('m_inputs=','1')
+print default_sink, X_root, Y_root, m_inputs
+## Global vars
+vol_grey = "#%02x%02x%02x" % (235,235,235)
+greyer = "#%02x%02x%02x" % (225,225,225)
+greyest = "#%02x%02x%02x" % (215,215,215)
+vol_red = "#%02x%02x%02x" % (255,100,100)
+dark_red = "#%02x%02x%02x" % (180,25,25)
+dark_red2 = "#%02x%02x%02x" % (220,70,70)
+dark = "#%02x%02x%02x" % (35,35,35)
+ldark = "#%02x%02x%02x" % (55,55,55)
+vol_blue = "#%02x%02x%02x" % (80,80,150)
+dblue = "#%02x%02x%02x" % (50,50,120)
+lblue = "#%02x%02x%02x" % (130,130,220)
+llblue = "#%02x%02x%02x" % (180,180,245)
+vol_green = "#%02x%02x%02x" % (0,255,0)
+blgr = "#%02x%02x%02x" % (34,67,79)
+vol_yellow = "#%02x%02x%02x" % (200,200,120)
+if os.path.exists('/usr/bin/qpaeq') == True:
+    check_equalizer = 'qpaeq'
+if os.path.exists('/usr/local/bin/qpaeq') == True:
+    check_equalizer = 'qpaeq'
+if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
+    check_equalizer = 'pulse-eq-gtk'
+if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
+    check_equalizer = 'pulse-eq-gtk'
+if check_equalizer == '0' :
+    print 'Equalizer not found'
+else:
+    print check_equalizer,'found'
+
+
+pac = PA_controller()
+## Tkinter
+root = Tk()
+root.title("SPAGUI")
+root.minsize(500,300)
+root.geometry('%sx%s' % (X_root,Y_root))
+maxsize = "5x5"
+
+def startup_task():
+    global gui_handler
+    set_winicon(root,'load/icon.ico')
+    gui_handler = GUI_handler()
+    
+##set_winicon(root,'icon')
+##root.protocol('WM_DELETE_WINDOW', closewin)
+root.after(50, startup_task)
+root.mainloop()
+
