@@ -11,7 +11,7 @@ def editf():
     a.append('Comment=')
     a.append('Terminal=false')
     a.append('Name=sPAGUI')
-    a.append('Exec='+ path + 'Volum.py')
+    a.append('Exec='+ path + 'sPAGUI.py')
     a.append('Path='+ path)
     a.append('Type=Application')
     a.append('Icon=' + path + 'load/icon.ico')
