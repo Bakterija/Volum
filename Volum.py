@@ -126,18 +126,19 @@ def set_sink_volume(index,volume):
     print index,volume
     gui_handler.reset_timer()
 
-def switch_input_sink(index,new_index):
-    subprocess.Popen('pacmd move-sink-input %s %s' % (index, new_index), shell=True,stdout=subprocess.PIPE)
-    print index, new_index
+def switch_input_sink(sinput,new_sink):
+    subprocess.Popen('pacmd move-sink-input %s %s' % (sinput[0], new_sink), shell=True,stdout=subprocess.PIPE)
+    time.sleep(0.05)
+    set_input_volume(sinput[0], sinput[2])
     gui_handler.reset_timer()
 
 def move_inputs_to_sink(index):
     inputs_to_move = pac.return_inputs()
-    os.system("load/./set_default_sink.sh %s" % (index[0]))
+    subprocess.Popen("pacmd set-default-sink %s" % (index[0]), shell=True,stdout=subprocess.PIPE)
     for inputs in inputs_to_move:
-        os.system("load/./switch_inputs.sh %s %s" % (inputs[0],index[0]))
+        switch_input_sink(inputs,index[0])
     for x in inputs_to_move:
-        print 'Switched: ', x[0],' '+x[1]+' ',' to ', index[2]
+        print 'Switched: ', x[0],' '+x[4]+' ',' to ', index[2]
     gui_handler.reset_timer()
 
 class PA_controller:
@@ -446,7 +447,7 @@ class App_frame:
             if self.sink == x[0]:
                 bgcol = vol_green
             btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=20, bg_hov=vol_red, font=('Droid sans',11,'normal')
-                             ,func='func', command= eval_command(self.index,x[0]))
+                             ,func='func', command= eval_command((self.index,self.app_name,self.volume),x[0]))
             btn.pack(side=RIGHT,padx=2)
             self.button_list.append(btn)
     def reset_sink_buttons(self):
@@ -487,8 +488,8 @@ class App_frame:
             gui_handler.reset_timer()
             gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
                                       
-    def switch_sink(self,index,new_index):
-        switch_input_sink(index,new_index)
+    def switch_sink(self,sinput,new_index):
+        switch_input_sink(sinput,new_index)
         self.sink = new_index
         self.reset_sink_buttons()
 
@@ -515,23 +516,9 @@ class GUI_handler:
         self.back_frame = Frame(root, width=X_root, height=Y_root,bg=self.bg_color)
         self.back_frame.pack_propagate(0)
         self.back_frame.pack()
+
         
-        root.config(bg=self.bg_color)
-        self.frame1 = Frame(root)
-        self.device_tab()
-
-        root.bind('<F1>', lambda x: self.device_tab())
-        root.bind('<F2>', lambda x: self.app_tab())
-        root.bind('<e>', self.toggle_input_moving)
-        root.after(100, self.timer_task)
-        root.after(20, self.timer2_task)
-
-    def create_frames(self):
-        self.frame1.destroy()
-        self.frame1 = Frame(self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
-        self.frame1.pack_propagate(0)
-        self.frame1.pack()
-        self.frame2 = Frame(self.frame1, width=X_root, height=20,bg=self.bg_color)
+        self.frame2 = Frame(self.back_frame, width=X_root, height=20,bg=self.bg_color)
         self.frame2.pack_propagate(0)
         self.frame2.pack(padx=30, pady=10)
 
@@ -543,9 +530,25 @@ class GUI_handler:
                         fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.app_tab)
         self.device_btn.pack(side=LEFT,padx=10)
         
+        root.config(bg=self.bg_color)
+        self.frame1 = Frame(root)
+        self.device_tab()
+
+        root.bind('<F1>', lambda x: self.device_tab())
+        root.bind('<F2>', lambda x: self.app_tab())
+        root.bind('<e>', self.toggle_input_moving)
+        root.after(100, self.timer_task)
+        root.after(20, self.timer2_task)
+
+    def reset_frame1(self):
+        self.frame1.destroy()
+        self.frame1 = Frame(self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
+        self.frame1.pack_propagate(0)
+        self.frame1.pack()
+        
     def device_tab(self):
         self.active_tab = 'device'
-        self.create_frames()
+        self.reset_frame1()
         self.volume_canva = Canvas(self.frame1, width=150*500/178.571, height=300/10+4,
                                    bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
         self.volume_canva.pack(anchor=NW,padx=30,pady=10)
@@ -577,12 +580,13 @@ class GUI_handler:
             root.bind(int(x[0])+1, eval_command(x[0]))
         self.volume_canva.bind('<Enter>', self.on_vol_enter)
         self.volume_canva.bind('<Leave>', self.on_vol_leave)
-        self.volume_canva.bind('<Button-3>', self.toggle_mute)
+        for x in self.frame2, self.sink_label, self.frame1, self.volume_canva:
+            x.bind('<Button-3>', self.toggle_mute)
 
     def app_tab(self):
         global app_handler
         self.active_tab = 'app'
-        self.create_frames()
+        self.reset_frame1()
         self.app_list = []
         # places application frames
         app_handler = App_handler(self.frame1, bg=self.bg_color)
@@ -618,26 +622,26 @@ class GUI_handler:
             move_inputs_to_sink(self.active_sink)
 
     def volume_UP(self,*arg):
+        gui_handler.reset_timer()
         if self.muted == True:
             self.toggle_mute()
         if self.volume < 150:
             self.volume += 5
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
-            self.timer2 = 160
+            self.timer2 = 200
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
-            gui_handler.reset_timer()
             root.title('Vol. - '+str(self.volume))
     def volume_DOWN(self,*arg):
+        gui_handler.reset_timer()
         if self.muted == True:
             self.toggle_mute()
         if self.volume > 0:
             self.volume -= 5
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
-            self.timer2 = 160
+            self.timer2 = 200
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
-            gui_handler.reset_timer()
             root.title('Vol. - '+str(self.volume))
             
     def redraw_volume_bar(self):

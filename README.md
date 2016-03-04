@@ -1,4 +1,4 @@
-# A simple pulseaudio GUI with optional equalizers
+# sPAGUI - simple Pulse Audio GUI with optional equalizers
 ![Tab1.](https://github.com/Bakterija/Volum/tree/master/load/screenshot.png)
 ![Tab2.](https://github.com/Bakterija/Volum/tree/master/load/screenshot2.png)
 Uses python and tkinter -- install with "install.sh"
