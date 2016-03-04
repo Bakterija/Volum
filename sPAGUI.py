@@ -500,7 +500,7 @@ class GUI_handler:
         self.eq_picture = return_picture('load/eqpic.png')
         self.eq_picture_hov = return_picture('load/eqpic_hov.png')
         self.bg_color = window_bgcol
-        self.bg_color = '#EBEBEB'
+##        self.bg_color = '#EBEBEB'
         self.label_color = '#E1E1E1'
         self.volcol = (vol_red,vol_blue)
         self.muted_volcol = (blgr,blgr2)
@@ -521,14 +521,14 @@ class GUI_handler:
         self.frame2 = Frame(self.back_frame, width=X_root, height=20,bg=self.bg_color)
         self.frame2.pack_propagate(0)
         self.frame2.pack(padx=30, pady=10)
-
+##self.label_color
         # Device:: / App:: buttons
         self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
-                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.device_tab)
+                        fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.device_tab)
         self.device_btn.pack(side=LEFT)
-        self.device_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
-                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.app_tab)
-        self.device_btn.pack(side=LEFT,padx=10)
+        self.app_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
+                        fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.app_tab)
+        self.app_btn.pack(side=LEFT,padx=10)
         
         root.config(bg=self.bg_color)
         self.frame1 = Frame(root)
@@ -545,9 +545,12 @@ class GUI_handler:
         self.frame1 = Frame(self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
         self.frame1.pack_propagate(0)
         self.frame1.pack()
+        self.timer = 0
         
     def device_tab(self):
         self.active_tab = 'device'
+        self.device_btn.configure(bg=self.label_color)
+        self.app_btn.configure(bg=self.bg_color)
         self.reset_frame1()
         self.volume_canva = Canvas(self.frame1, width=150*500/178.571, height=300/10+4,
                                    bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
@@ -585,6 +588,8 @@ class GUI_handler:
 
     def app_tab(self):
         global app_handler
+        self.device_btn.configure(bg=self.bg_color)
+        self.app_btn.configure(bg=self.label_color)
         self.active_tab = 'app'
         self.reset_frame1()
         self.app_list = []
