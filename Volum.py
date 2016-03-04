@@ -738,6 +738,7 @@ vol_green = "#%02x%02x%02x" % (0,255,0)
 blgr = "#%02x%02x%02x" % (29,62,84)
 blgr2 = "#%02x%02x%02x" % (14,47,59)
 vol_yellow = "#%02x%02x%02x" % (200,200,120)
+check_equalizer = '0'
 if os.path.exists('/usr/bin/qpaeq') == True:
     check_equalizer = 'qpaeq'
 if os.path.exists('/usr/local/bin/qpaeq') == True:

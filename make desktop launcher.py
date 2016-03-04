@@ -10,7 +10,7 @@ def editf():
     a.append('[Desktop Entry]')
     a.append('Comment=')
     a.append('Terminal=false')
-    a.append('Name=Volum')
+    a.append('Name=sPAGUI')
     a.append('Exec='+ path + 'Volum.py')
     a.append('Path='+ path)
     a.append('Type=Application')
@@ -18,8 +18,8 @@ def editf():
     return a
 
 def savef(text):
-    f = open('/home/'+ user + '/Desktop/Volum.desktop', 'w')
-    print ('/home/'+ user + '/Desktop/Volum.desktop')
+    f = open('/home/'+ user + '/Desktop/sPAGUI.desktop', 'w')
+    print ('/home/'+ user + '/Desktop/sPAGUI.desktop')
     f.write(text)
     f.close()
 
