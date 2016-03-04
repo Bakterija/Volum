@@ -10,7 +10,7 @@ def editf():
     a.append('[Desktop Entry]')
     a.append('Comment=')
     a.append('Terminal=false')
-    a.append('Name=SPAGUI')
+    a.append('Name=Volum')
     a.append('Exec='+ path + 'Volum.py')
     a.append('Path='+ path)
     a.append('Type=Application')

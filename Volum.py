@@ -24,6 +24,8 @@ from PIL import Image as Pillow_image
 from PIL import ImageTk
 import tkFont, tkMessageBox , time
 
+ver = '2'
+
 def readf(filename):
     file = filename
     try:
@@ -337,6 +339,10 @@ class msg_binder:
         elif self.function == 'link' and self.function_exc != 'none':
             open_address_in_webbrowser(self.function_exc)
 
+    def configure(self,**kwargs):
+        self.bg = get_dict_item(kwargs,'bg','')
+        self.msg.config(bg=self.bg)
+
 
 def printeris(*arg):
     print 'printeris'
@@ -492,10 +498,11 @@ class GUI_handler:
     def __init__(self):
         self.eq_picture = return_picture('load/eqpic.png')
         self.eq_picture_hov = return_picture('load/eqpic_hov.png')
-        self.bg_frame1 = '#DCDCDC'
+        self.bg_color = window_bgcol
         self.bg_color = '#EBEBEB'
         self.label_color = '#E1E1E1'
         self.volcol = (vol_red,vol_blue)
+        self.muted_volcol = (blgr,blgr2)
         self.timer = 1500
         self.timer2 = -99
         self.timed_event = None
@@ -504,6 +511,10 @@ class GUI_handler:
         self.active_sink = self.sinks[self.sink_index]
         self.volume = self.active_sink[1]
         self.inputs = pac.return_inputs()
+        self.muted = False
+        self.back_frame = Frame(root, width=X_root, height=Y_root,bg=self.bg_color)
+        self.back_frame.pack_propagate(0)
+        self.back_frame.pack()
         
         root.config(bg=self.bg_color)
         self.frame1 = Frame(root)
@@ -514,11 +525,28 @@ class GUI_handler:
         root.bind('<e>', self.toggle_input_moving)
         root.after(100, self.timer_task)
         root.after(20, self.timer2_task)
+
+    def create_frames(self):
+        self.frame1.destroy()
+        self.frame1 = Frame(self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
+        self.frame1.pack_propagate(0)
+        self.frame1.pack()
+        self.frame2 = Frame(self.frame1, width=X_root, height=20,bg=self.bg_color)
+        self.frame2.pack_propagate(0)
+        self.frame2.pack(padx=30, pady=10)
+
+        # Device:: / App:: buttons
+        self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
+                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.device_tab)
+        self.device_btn.pack(side=LEFT)
+        self.device_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
+                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.app_tab)
+        self.device_btn.pack(side=LEFT,padx=10)
         
     def device_tab(self):
         self.active_tab = 'device'
-        self.add_tab_buttons()
-        self.volume_canva = Canvas(self.frame1, width=150*500/178.571+4, height=300/10+4,
+        self.create_frames()
+        self.volume_canva = Canvas(self.frame1, width=150*500/178.571, height=300/10+4,
                                    bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
         self.volume_canva.pack(anchor=NW,padx=30,pady=10)
         self.redraw_volume_bar()
@@ -549,6 +577,18 @@ class GUI_handler:
             root.bind(int(x[0])+1, eval_command(x[0]))
         self.volume_canva.bind('<Enter>', self.on_vol_enter)
         self.volume_canva.bind('<Leave>', self.on_vol_leave)
+        self.volume_canva.bind('<Button-3>', self.toggle_mute)
+
+    def app_tab(self):
+        global app_handler
+        self.active_tab = 'app'
+        self.create_frames()
+        self.app_list = []
+        # places application frames
+        app_handler = App_handler(self.frame1, bg=self.bg_color)
+        for x in self.inputs:
+            app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+                            
 
     def toggle_input_moving(self,*arg):
         global m_inputs
@@ -577,34 +617,9 @@ class GUI_handler:
         if m_inputs == 1:
             move_inputs_to_sink(self.active_sink)
 
-    def app_tab(self):
-        global app_handler
-        self.active_tab = 'app'
-        self.add_tab_buttons()
-        self.app_list = []
-        # places application frames
-        app_handler = App_handler(self.frame1, bg=self.bg_color)
-        for x in self.inputs:
-            app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
-        
-    def add_tab_buttons(self):
-        self.frame1.destroy()
-        self.frame1 = Frame(root, width=X_root, height=Y_root,bg=self.bg_color)
-        self.frame1.pack_propagate(0)
-        self.frame1.pack()
-        self.frame2 = Frame(self.frame1, width=X_root, height=20,bg=self.bg_color)
-        self.frame2.pack_propagate(0)
-        self.frame2.pack(padx=30, pady=10)
-
-        # Device:: / App:: buttons
-        self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
-                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.device_tab)
-        self.device_btn.pack(side=LEFT)
-        self.device_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
-                        fg='black', bg_hov='#B4B4F5', bg=self.label_color, func='func', command=self.app_tab)
-        self.device_btn.pack(side=LEFT,padx=10)
-
     def volume_UP(self,*arg):
+        if self.muted == True:
+            self.toggle_mute()
         if self.volume < 150:
             self.volume += 5
             if self.active_tab == 'device':
@@ -612,7 +627,10 @@ class GUI_handler:
             self.timer2 = 160
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
             gui_handler.reset_timer()
+            root.title('Vol. - '+str(self.volume))
     def volume_DOWN(self,*arg):
+        if self.muted == True:
+            self.toggle_mute()
         if self.volume > 0:
             self.volume -= 5
             if self.active_tab == 'device':
@@ -620,17 +638,23 @@ class GUI_handler:
             self.timer2 = 160
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
             gui_handler.reset_timer()
+            root.title('Vol. - '+str(self.volume))
             
     def redraw_volume_bar(self):
-        self.volume_canva.delete(ALL)
-        if self.volume <= 100:
-            self.volume_canva.create_rectangle(2, 2, self.volume*500/178.571, 300/10+2, fill=self.volcol[0], outline='')
+        if self.muted == True:
+            volume = self.muted_volume
+            volcol = self.muted_volcol
         else:
-            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=self.volcol[0], outline='')
-            self.volume_canva.create_rectangle(100*500/178.571, 2, self.volume*500/178.571-2, 300/10+2, fill=self.volcol[1], outline='')
-        self.volume_canva.create_text((0,(300/10+4)/2),anchor=W, text=' '+str(self.volume),
+            volume = self.volume
+            volcol = self.volcol
+        self.volume_canva.delete(ALL)
+        if volume <= 100:
+            self.volume_canva.create_rectangle(2, 2, volume*500/178.571, 300/10+2, fill=volcol[0], outline='')
+        else:
+            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=volcol[0], outline='')
+            self.volume_canva.create_rectangle(100*500/178.571, 2, volume*500/178.571-2, 300/10+2, fill=volcol[1], outline='')
+        self.volume_canva.create_text((0,(300/10+4)/2),anchor=W, text=' '+str(volume),
                                       font= ('Liberation sans', 16, 'bold'), fill='white')
-
     def refresh(self):
         pac.reset_sinks_inputs()
         if pac.reload_gui == True:
@@ -645,12 +669,14 @@ class GUI_handler:
                 app_handler.reset(self.bg_color)
                 for x in self.inputs:
                     app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+    ## Refreshes Pulse Audio information
     def timer_task(self):
         self.timer -= 100
         if self.timer < 0:
             self.reset_timer()
             self.refresh()
         root.after(100, self.timer_task)
+    ## Runs a function, usually volume change, a set amount of time after last input
     def timer2_task(self):
         if self.timer2 > 0:
             self.timer2 -= 20
@@ -660,7 +686,30 @@ class GUI_handler:
         root.after(20, self.timer2_task)
     def reset_timer(self):
         self.timer = 1000
-    
+
+    def toggle_mute(self,*arg):
+        if self.muted == False:
+            self.muted = True
+            self.muted_volume, self.volume = self.volume, 0
+            self.timer2 = 40
+            self.timed_event = lambda: set_sink_volume(self.active_sink[0],0)
+            gui_handler.reset_timer()
+            self.redraw_volume_bar()
+            self.bg_color = window_bgcol2
+            for x in self.eq_button, self.frame2, self.sink_label, self.frame1, self.back_frame:
+                x.configure(bg=self.bg_color)
+            root.title("Muted")
+        else:
+            self.muted = False
+            self.volume = self.muted_volume
+            self.timer2 = 40
+            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
+            gui_handler.reset_timer()
+            self.redraw_volume_bar()
+            self.bg_color = window_bgcol
+            for x in self.eq_button, self.frame2, self.sink_label, self.frame1, self.back_frame:
+                x.configure(bg=self.bg_color)
+            root.title("sPAGUI "+ver)
         
 ## Load settings
 default_sink = int(read_settings('default_sink=','0'))
@@ -668,6 +717,9 @@ X_root = read_settings('X_root=','500')
 Y_root = read_settings('Y_root=','300')
 m_inputs = int(read_settings('m_inputs=',1))
 ## Global vars
+bgg1 = '#DCDCDC'
+window_bgcol = '#EBEBEB'
+window_bgcol2 = '#C8C8C8'
 vol_grey = "#%02x%02x%02x" % (235,235,235)
 greyer = "#%02x%02x%02x" % (225,225,225)
 greyest = "#%02x%02x%02x" % (215,215,215)
@@ -683,7 +735,8 @@ dblue = "#%02x%02x%02x" % (50,50,120)
 lblue = "#%02x%02x%02x" % (130,130,220)
 llblue = "#%02x%02x%02x" % (180,180,245)
 vol_green = "#%02x%02x%02x" % (0,255,0)
-blgr = "#%02x%02x%02x" % (34,67,79)
+blgr = "#%02x%02x%02x" % (29,62,84)
+blgr2 = "#%02x%02x%02x" % (14,47,59)
 vol_yellow = "#%02x%02x%02x" % (200,200,120)
 if os.path.exists('/usr/bin/qpaeq') == True:
     check_equalizer = 'qpaeq'
@@ -702,7 +755,7 @@ else:
 pac = PA_controller()
 ## Tkinter
 root = Tk()
-root.title("SPAGUI")
+root.title("sPAGUI "+ver)
 root.minsize(500,300)
 root.geometry('%sx%s' % (X_root,Y_root))
 maxsize = "5x5"
