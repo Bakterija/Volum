@@ -24,8 +24,6 @@ from PIL import Image as Pillow_image
 from PIL import ImageTk
 import tkFont, tkMessageBox , time
 
-ver = '2'
-
 def readf(filename):
     file = filename
     try:
@@ -214,7 +212,6 @@ class PA_controller:
         count = 0
         for x in newlist2:
             if len(x) < 3:
-    ##            newlist2.pop(count)
                 newlist2[count].append('Noname')
             count+= 1
         count = 0
@@ -246,10 +243,8 @@ class PA_controller:
                 index += 1
         index = 0
         for indexes in newlist:
-##            print '\n\n'
             media_name,app_volume,app_sink,app_name = 'n/a','n/a','n/a','n/a'
             for lines in indexes:
-##                print index,'\n',lines
                 b = lines.find('media.name')
                 if b is not -1:
                     media_name = lines[b+14:-1]
@@ -308,6 +303,9 @@ class msg_binder:
 
     def destroy(self):
         self.msg.destroy()
+
+    def bind(self,func):
+        self.msg.bind(func)
 
     def pack(self,**kwargs):
         side = get_dict_item(kwargs,'side','top')
@@ -369,7 +367,6 @@ class App_handler:
         self.parent.bind('<Button-4>', self.frame_place_DOWN)
         self.frame.bind('<Button-5>', self.frame_place_UP)
         self.frame.bind('<Button-4>', self.frame_place_DOWN)
-        self.frame.bind('<f>', self.reset)
 
     def add(self, parent, index, **kwargs):
         media_name = get_dict_item(kwargs,'media_name','n/a')
@@ -380,21 +377,36 @@ class App_handler:
             app_name = media_name
         y_adjustment = 0 + self.app_placement +(self.app_place_interval* len(self.frame_list))
         App_frame(self.frame, index, y_adjustment, media_name, volume, sink, app_name)
-        self.frame_list[-1].bind('<Button-5>', self.frame_place_UP)
-        self.frame_list[-1].bind('<Button-4>', self.frame_place_DOWN)
+        self.frame_list[-1].frame.bind('<Button-5>', self.frame_place_UP)
+        self.frame_list[-1].frame.bind('<Button-4>', self.frame_place_DOWN)
+        self.frame_list[-1].name.bind('<Button-5>', self.frame_place_UP)
+        self.frame_list[-1].name.bind('<Button-4>', self.frame_place_DOWN)
 
-    def reset(self,bg):
-        self.frame.destroy()
-        self.frame_list = []
-        self.create_frame(bg)
+    def reset_listlen(self,input_list):
+        current_len = len(self.frame_list)
+        new_len = len(input_list)
+        return current_len, new_len
+    def update(self,input_list):
+        current_len, new_len = self.reset_listlen(input_list)
+        while current_len > new_len:
+            self.frame_list[-1].destroy()
+            self.frame_list.pop(-1)
+            current_len, new_len = self.reset_listlen(input_list)
+        while current_len < new_len:
+            self.add(gui_handler.frame1, 0)
+            current_len, new_len = self.reset_listlen(input_list)
+        cnt = 0
+        for index, media_name, volume, sink, app_name in input_list:
+            self.frame_list[cnt].configure(index=index, media_name=media_name, volume=volume, sink=sink, app_name=app_name)
+            cnt += 1
   
     def placement_task(self, *arg):
         adj = 0
         for x in self.frame_list:
             if self.app_placement+adj < 0:
-                x.place_configure(y=6200)
+                x.frame.place_configure(y=6200)
             else:
-                x.place_configure(y=adj+self.app_placement)
+                x.frame.place_configure(y=adj+self.app_placement)
             adj+= self.app_place_interval
     def frame_place_UP(self, *arg):
         self.app_placement -= self.app_place_interval/2
@@ -412,7 +424,7 @@ class App_frame:
         self.y_adj = y_adjustment
         self.media_name = media_name
         self.volume = volume
-        self.sink = str(sink)
+        self.sink = sink
         self.app_name = app_name
         self.button_list = []
         self.volcol = (vol_red,vol_blue)
@@ -422,7 +434,8 @@ class App_frame:
         self.frame.place(x=30, y=self.y_adj)
         self.frame_btn = Frame(self.frame, height=20,bg=gui_handler.bg_color)
         self.frame_btn.pack(side=RIGHT)
-        app_handler.frame_list.append(self.frame)
+        ## appends to app_handlers list
+        app_handler.frame_list.append(self)
 
         self.name = Label(self.frame, text=self.app_name, font=('Droid sans',12,'normal'), background=gui_handler.bg_color)
         self.name.pack(side=LEFT)
@@ -434,7 +447,6 @@ class App_frame:
         self.canva.pack(side=RIGHT,padx=10)
         self.redraw_volume()
 
-
         self.canva.bind('<Enter>', self.on_enter)
         self.canva.bind('<Leave>', self.on_leave)
         self.canva.bind('<Button-4>', self.volume_UP)
@@ -444,7 +456,7 @@ class App_frame:
         eval_command = lambda x,x2: (lambda : self.switch_sink(x,x2))
         for x in gui_handler.sinks:
             bgcol = lblue
-            if self.sink == x[0]:
+            if int(self.sink) == int(x[0]):
                 bgcol = vol_green
             btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=20, bg_hov=vol_red, font=('Droid sans',11,'normal')
                              ,func='func', command= eval_command((self.index,self.app_name,self.volume),x[0]))
@@ -493,14 +505,29 @@ class App_frame:
         self.sink = new_index
         self.reset_sink_buttons()
 
+    def configure(self,**kwargs):
+        self.media_name = get_dict_item(kwargs,'media_name','n/a')
+        self.volume = int(get_dict_item(kwargs,'volume', 50))
+        self.sink = int(get_dict_item(kwargs,'sink', 0))
+        self.app_name = get_dict_item(kwargs,'app_name', 'n/a')
+        self.index = int(get_dict_item(kwargs,'index', 0))
+        if self.app_name == 'n/a':
+            self.app_name = self.media_name
+        self.name.configure(text=self.app_name)
+        self.redraw_volume()
+        self.reset_sink_buttons()
+
+    def destroy(self,*arg):
+        self.frame.destroy()
+
 
 
 class GUI_handler:
     def __init__(self):
+        global pac
         self.eq_picture = return_picture('load/eqpic.png')
         self.eq_picture_hov = return_picture('load/eqpic_hov.png')
         self.bg_color = window_bgcol
-##        self.bg_color = '#EBEBEB'
         self.label_color = '#E1E1E1'
         self.volcol = (vol_red,vol_blue)
         self.muted_volcol = (blgr,blgr2)
@@ -509,7 +536,15 @@ class GUI_handler:
         self.timed_event = None
         self.sinks = pac.return_sinks()
         self.sink_index = int(default_sink)
-        self.active_sink = self.sinks[self.sink_index]
+        try:
+            self.active_sink = self.sinks[self.sink_index]
+        except:
+            print 'Sink not found, switching to 0'
+            try:
+                self.active_sink = self.sinks[0]
+                self.sink_index = 1
+            except:
+                print 'No sink found'
         self.volume = self.active_sink[1]
         self.inputs = pac.return_inputs()
         self.muted = False
@@ -521,7 +556,7 @@ class GUI_handler:
         self.frame2 = Frame(self.back_frame, width=X_root, height=20,bg=self.bg_color)
         self.frame2.pack_propagate(0)
         self.frame2.pack(padx=30, pady=10)
-##self.label_color
+
         # Device:: / App:: buttons
         self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
                         fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.device_tab)
@@ -593,10 +628,8 @@ class GUI_handler:
         self.active_tab = 'app'
         self.reset_frame1()
         self.app_list = []
-        # places application frames
         app_handler = App_handler(self.frame1, bg=self.bg_color)
-        for x in self.inputs:
-            app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+        app_handler.update(self.inputs)
                             
 
     def toggle_input_moving(self,*arg):
@@ -675,9 +708,8 @@ class GUI_handler:
                 self.volume = self.active_sink[1]
                 self.redraw_volume_bar()
             elif self.active_tab == 'app':
-                app_handler.reset(self.bg_color)
-                for x in self.inputs:
-                    app_handler.add(self.frame1, x[0], media_name=x[1], volume=x[2], sink=x[3], app_name=x[4])
+                app_handler.update(self.inputs)
+            root.title('Vol. - '+str(self.volume))
     ## Refreshes Pulse Audio information
     def timer_task(self):
         self.timer -= 100
@@ -719,64 +751,63 @@ class GUI_handler:
             for x in self.eq_button, self.frame2, self.sink_label, self.frame1, self.back_frame:
                 x.configure(bg=self.bg_color)
             root.title("sPAGUI "+ver)
+
+if __name__ == '__main__':
+    ## Load settings
+    default_sink = int(read_settings('default_sink=','0'))
+    X_root = read_settings('X_root=','500')
+    Y_root = read_settings('Y_root=','300')
+    m_inputs = int(read_settings('m_inputs=',1))
+    ## Global vars
+    ver = '2'
+    bgg1 = '#DCDCDC'
+    window_bgcol = '#EBEBEB'
+    window_bgcol2 = '#C8C8C8'
+    vol_grey = "#%02x%02x%02x" % (235,235,235)
+    greyer = "#%02x%02x%02x" % (225,225,225)
+    greyest = "#%02x%02x%02x" % (215,215,215)
+    dark_red = "#%02x%02x%02x" % (180,25,25)
+    dark_red2 = "#%02x%02x%02x" % (220,70,70)
+    dark = "#%02x%02x%02x" % (35,35,35)
+    ldark = "#%02x%02x%02x" % (55,55,55)
+    vol_red = "#%02x%02x%02x" % (255,100,100)
+    vol_blue = "#%02x%02x%02x" % (80,80,150)
+    vol_red2 = "#%02x%02x%02x" % (215,70,70)
+    vol_blue2 = "#%02x%02x%02x" % (50,50,120)
+    dblue = "#%02x%02x%02x" % (50,50,120)
+    lblue = "#%02x%02x%02x" % (130,130,220)
+    llblue = "#%02x%02x%02x" % (180,180,245)
+    vol_green = "#%02x%02x%02x" % (0,255,0)
+    blgr = "#%02x%02x%02x" % (29,62,84)
+    blgr2 = "#%02x%02x%02x" % (14,47,59)
+    vol_yellow = "#%02x%02x%02x" % (200,200,120)
+    check_equalizer = '0'
+    if os.path.exists('/usr/bin/qpaeq') == True:
+        check_equalizer = 'qpaeq'
+    if os.path.exists('/usr/local/bin/qpaeq') == True:
+        check_equalizer = 'qpaeq'
+    if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
+        check_equalizer = 'pulse-eq-gtk'
+    if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
+        check_equalizer = 'pulse-eq-gtk'
+    if check_equalizer == '0' :
+        print 'Equalizer not found'
+    else:
+        print check_equalizer,'found'
+
+    root = Tk()
+    root.title("sPAGUI "+ver)
+    root.minsize(500,300)
+    root.geometry('%sx%s' % (X_root,Y_root))
+    maxsize = "5x5"
+
+    def startup_task():
+        global gui_handler, pac
+        set_winicon(root,'load/icon.ico')
+        pac = PA_controller()
+        gui_handler = GUI_handler()
         
-## Load settings
-default_sink = int(read_settings('default_sink=','0'))
-X_root = read_settings('X_root=','500')
-Y_root = read_settings('Y_root=','300')
-m_inputs = int(read_settings('m_inputs=',1))
-## Global vars
-bgg1 = '#DCDCDC'
-window_bgcol = '#EBEBEB'
-window_bgcol2 = '#C8C8C8'
-vol_grey = "#%02x%02x%02x" % (235,235,235)
-greyer = "#%02x%02x%02x" % (225,225,225)
-greyest = "#%02x%02x%02x" % (215,215,215)
-dark_red = "#%02x%02x%02x" % (180,25,25)
-dark_red2 = "#%02x%02x%02x" % (220,70,70)
-dark = "#%02x%02x%02x" % (35,35,35)
-ldark = "#%02x%02x%02x" % (55,55,55)
-vol_red = "#%02x%02x%02x" % (255,100,100)
-vol_blue = "#%02x%02x%02x" % (80,80,150)
-vol_red2 = "#%02x%02x%02x" % (215,70,70)
-vol_blue2 = "#%02x%02x%02x" % (50,50,120)
-dblue = "#%02x%02x%02x" % (50,50,120)
-lblue = "#%02x%02x%02x" % (130,130,220)
-llblue = "#%02x%02x%02x" % (180,180,245)
-vol_green = "#%02x%02x%02x" % (0,255,0)
-blgr = "#%02x%02x%02x" % (29,62,84)
-blgr2 = "#%02x%02x%02x" % (14,47,59)
-vol_yellow = "#%02x%02x%02x" % (200,200,120)
-check_equalizer = '0'
-if os.path.exists('/usr/bin/qpaeq') == True:
-    check_equalizer = 'qpaeq'
-if os.path.exists('/usr/local/bin/qpaeq') == True:
-    check_equalizer = 'qpaeq'
-if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
-    check_equalizer = 'pulse-eq-gtk'
-if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
-    check_equalizer = 'pulse-eq-gtk'
-if check_equalizer == '0' :
-    print 'Equalizer not found'
-else:
-    print check_equalizer,'found'
-
-
-pac = PA_controller()
-## Tkinter
-root = Tk()
-root.title("sPAGUI "+ver)
-root.minsize(500,300)
-root.geometry('%sx%s' % (X_root,Y_root))
-maxsize = "5x5"
-
-def startup_task():
-    global gui_handler
-    set_winicon(root,'load/icon.ico')
-    gui_handler = GUI_handler()
-    
-##set_winicon(root,'icon')
-##root.protocol('WM_DELETE_WINDOW', closewin)
-root.after(50, startup_task)
-root.mainloop()
-
+    ##set_winicon(root,'icon')
+    ##root.protocol('WM_DELETE_WINDOW', closewin)
+    root.after(50, startup_task)
+    root.mainloop()
