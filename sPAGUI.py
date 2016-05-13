@@ -343,12 +343,6 @@ class msg_binder:
         self.msg.config(bg=self.bg)
 
 
-def printeris(*arg):
-    print 'printeris'
-    for x in arg:
-        print arg
-
-
 class App_handler:
     def __init__(self, parent, **kwargs):
         bg = get_dict_item(kwargs,'bg','red')
@@ -614,8 +608,8 @@ class GUI_handler:
         root.bind('<d>', self.volume_UP)
         root.bind('<a>', self.volume_DOWN)
         eval_command = lambda x: (lambda p: self.switch_active_sink(x))
-        for x in self.sinks:
-            root.bind(int(x[0])+1, eval_command(x[0]))
+        for i, x in enumerate(self.sinks):
+            root.bind(str(i+1), eval_command(x[0]))
         self.volume_canva.bind('<Enter>', self.on_vol_enter)
         self.volume_canva.bind('<Leave>', self.on_vol_leave)
         for x in self.frame2, self.sink_label, self.frame1, self.volume_canva:
@@ -650,10 +644,12 @@ class GUI_handler:
         self.redraw_volume_bar()
 
     def switch_active_sink(self,new_index):
-        self.sink_label.config(text='Sink: '+self.sinks[int(new_index)][2])
-        self.sink_index = int(self.sinks[int(new_index)][0])
-        self.active_sink = self.sinks[self.sink_index]
-        write_settings('default_sink',self.active_sink[0])
+        for i, x in enumerate(self.sinks):
+            if x[0] == new_index: break
+        self.sink_label.config(text='Sink: '+self.sinks[i][2])
+        self.sink_index = i
+        self.active_sink = self.sinks[i]
+        write_settings('default_sink',self.sink_index)
         self.volume = self.active_sink[1]
         self.redraw_volume_bar()
         if m_inputs == 1:
