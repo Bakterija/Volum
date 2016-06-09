@@ -452,7 +452,7 @@ class App_frame:
             bgcol = lblue
             if int(self.sink) == int(x[0]):
                 bgcol = vol_green
-            btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=20, bg_hov=vol_red, font=('Droid sans',11,'normal')
+            btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=28, bg_hov=vol_red, font=('Droid sans',11,'normal')
                              ,func='func', command= eval_command((self.index,self.app_name,self.volume),x[0]))
             btn.pack(side=RIGHT,padx=2)
             self.button_list.append(btn)
@@ -504,9 +504,9 @@ class App_frame:
         self.volume = int(get_dict_item(kwargs,'volume', 50))
         self.sink = int(get_dict_item(kwargs,'sink', 0))
         self.app_name = get_dict_item(kwargs,'app_name', 'n/a')
+        if self.app_name == 'n/a': self.app_name = self.media_name
+        if len(self.app_name) > 14: self.app_name = self.app_name[:12]+'..'
         self.index = int(get_dict_item(kwargs,'index', 0))
-        if self.app_name == 'n/a':
-            self.app_name = self.media_name
         self.name.configure(text=self.app_name)
         self.redraw_volume()
         self.reset_sink_buttons()
