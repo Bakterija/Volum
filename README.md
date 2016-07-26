@@ -13,7 +13,6 @@ Run "install pulseaudio-**.sh" to install a different optional equalizer
 Run "make desktop launcher.py" to make a desktop launcher
 
 ###Hotkeys
-Run "Volum.py" to use the program
 
 Control volume with mousewheel, arrows or "A" and "D".
 
