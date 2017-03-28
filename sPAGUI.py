@@ -84,7 +84,7 @@ def write_settings(text_find,new_value):
     a = readf('load/settings.ini')
     a = edit_settings(a,text_find,new_value)
     text = a = '\n'.join(str(e) for e in a)
-    savef(text,'load/settings.ini')      
+    savef(text,'load/settings.ini')
 
 def return_picture(path):
     img = Pillow_image.open(path)
@@ -178,7 +178,7 @@ class PA_controller:
                 self.reload_gui = True
             if self.startup == True:
                 self.startup = False
-            
+
     def get_sinks(self,a):
         li_count = 0
         index = -1
@@ -351,7 +351,7 @@ class App_handler:
         self.app_place_interval = 30
         self.parent = parent
         self.create_frame(bg)
-        
+
     def create_frame(self, bg):
         self.frame = Frame(self.parent, width=X_root, height=Y_root,bg=bg)
         self.frame.pack_propagate(0)
@@ -393,7 +393,7 @@ class App_handler:
         for index, media_name, volume, sink, app_name in input_list:
             self.frame_list[cnt].configure(index=index, media_name=media_name, volume=volume, sink=sink, app_name=app_name)
             cnt += 1
-  
+
     def placement_task(self, *arg):
         adj = 0
         for x in self.frame_list:
@@ -471,7 +471,7 @@ class App_frame:
             self.canva.create_rectangle(150, 1, volume/100*150, 19, fill=self.volcol[1], outline='')
         self.canva.create_text((0,10),anchor=W, text=' '+str(self.volume),
                                       font= ('Liberation sans', 11, 'bold'), fill='white')
-        
+
     def on_enter(self,*arg):
         self.volcol = (vol_red2,vol_blue2)
         self.redraw_volume()
@@ -493,7 +493,7 @@ class App_frame:
             gui_handler.timer2 = 160
             gui_handler.reset_timer()
             gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
-                                      
+
     def switch_sink(self,sinput,new_index):
         switch_input_sink(sinput,new_index)
         self.sink = new_index
@@ -546,7 +546,7 @@ class GUI_handler:
         self.back_frame.pack_propagate(0)
         self.back_frame.pack()
 
-        
+
         self.frame2 = Frame(self.back_frame, width=X_root, height=20,bg=self.bg_color)
         self.frame2.pack_propagate(0)
         self.frame2.pack(padx=30, pady=10)
@@ -558,7 +558,7 @@ class GUI_handler:
         self.app_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
                         fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.app_tab)
         self.app_btn.pack(side=LEFT,padx=10)
-        
+
         root.config(bg=self.bg_color)
         self.frame1 = Frame(root)
         self.device_tab()
@@ -575,7 +575,7 @@ class GUI_handler:
         self.frame1.pack_propagate(0)
         self.frame1.pack()
         self.timer = 0
-        
+
     def device_tab(self):
         self.active_tab = 'device'
         self.device_btn.configure(bg=self.label_color)
@@ -607,6 +607,10 @@ class GUI_handler:
         root.bind('<Down>', self.volume_DOWN)
         root.bind('<d>', self.volume_UP)
         root.bind('<a>', self.volume_DOWN)
+        root.bind('<KP_Add>', self.volume_UP)
+        root.bind('<KP_Subtract>', self.volume_DOWN)
+        root.bind('<Escape>', lambda x: {root.quit(), root.destroy()})
+
         eval_command = lambda x: (lambda p: self.switch_active_sink(x))
         for i, x in enumerate(self.sinks):
             root.bind(str(i+1), eval_command(x[0]))
@@ -624,7 +628,7 @@ class GUI_handler:
         self.app_list = []
         app_handler = App_handler(self.frame1, bg=self.bg_color)
         app_handler.update(self.inputs)
-                            
+
 
     def toggle_input_moving(self,*arg):
         global m_inputs
@@ -677,7 +681,7 @@ class GUI_handler:
             self.timer2 = 200
             self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
             root.title('Vol. - '+str(self.volume))
-            
+
     def redraw_volume_bar(self):
         if self.muted == True:
             volume = self.muted_volume
@@ -802,7 +806,7 @@ if __name__ == '__main__':
         set_winicon(root,'load/icon.ico')
         pac = PA_controller()
         gui_handler = GUI_handler()
-        
+
     ##set_winicon(root,'icon')
     ##root.protocol('WM_DELETE_WINDOW', closewin)
     root.after(50, startup_task)
