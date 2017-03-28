@@ -14,7 +14,7 @@ Run "make desktop launcher.py" to make a desktop launcher
 
 ###Hotkeys
 
-Control volume with mousewheel, arrows or "A" and "D".
+Control volume with mousewheel, arrows,  a/d, add/subtract.
 
 Change default audio device with number buttons.
 
@@ -23,3 +23,5 @@ Toggle application output device switching on default device shange with  "E"
 Toggle mute with Right click
 
 Use "F1" and "F2" hotkeys to switch between tabs
+
+Quit with Escape
