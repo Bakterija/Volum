@@ -1,28 +1,52 @@
-#!/usr/bin/env python
+PY3 = False
 import os, subprocess, sys
-from Tkinter import *
-from Tkinter import Button as tkButton
-from Tkinter import Label as tkLabel
-from ttk import Style as ttkStyle
-from ttk import Button
-from ttk import Checkbutton
-from ttk import Radiobutton
-from ttk import Combobox
-from ttk import Menubutton
-from ttk import Scale
-from ttk import Separator
-from ttk import Treeview
-##from ttk import Label
-from ttk import Widget
-##from ttk import Frame as ttkFrame
+try:
+    from Tkinter import *
+    from Tkinter import Button as tkButton
+    from Tkinter import Label as tkLabel
+    from ttk import Style as ttkStyle
+    from ttk import Button
+    from ttk import Checkbutton
+    from ttk import Radiobutton
+    from ttk import Combobox
+    from ttk import Menubutton
+    from ttk import Scale
+    from ttk import Separator
+    from ttk import Treeview
+    from ttk import Widget
+    from tkFileDialog import askopenfilename
+    from tkFileDialog import askdirectory
+    from tkColorChooser import askcolor
+    from PIL import ImageTk
+    import tkFont, tkMessageBox
+    ##from ttk import Label
+    ##from ttk import Frame as ttkFrame
+except:
+    from tkinter import *
+    from tkinter import Button as tkButton
+    from tkinter import Label as tkLabel
+    from tkinter.ttk import Style as ttkStyle
+    from tkinter.ttk import Button
+    from tkinter.ttk import Checkbutton
+    from tkinter.ttk import Radiobutton
+    from tkinter.ttk import Combobox
+    from tkinter.ttk import Menubutton
+    from tkinter.ttk import Scale
+    from tkinter.ttk import Separator
+    from tkinter.ttk import Treeview
+    from tkinter.ttk import Widget
+    from tkinter.filedialog import askopenfilename
+    from tkinter.filedialog import askdirectory
+    from tkinter.colorchooser import askcolor
+    from PIL import ImageTk as ImageTk
+    import tkinter.font as tkFont
+    import tkinter.messagebox as tkMessageBox
+    PY3 = True
 from threading import Thread
 from random import randrange
-from tkFileDialog import askopenfilename
-from tkFileDialog import askdirectory
-from tkColorChooser import askcolor
 from PIL import Image as Pillow_image
-from PIL import ImageTk
-import tkFont, tkMessageBox , time
+import time
+
 
 def readf(filename):
     file = filename
@@ -91,19 +115,22 @@ def return_picture(path):
     img = ImageTk.PhotoImage(img)
     return img
 
-def set_winicon(window,path):
+def set_winicon(window, path):
     try:
         img = Pillow_image.open(path)
         img = ImageTk.PhotoImage(img)
         window.tk.call('wm', 'iconphoto', window._w, img)
+        # window.iconbitmap('path')
     except:
-        print "Couldn't load Linux icon"
+        print ("Couldn't load Linux icon")
 
 def subprocess_return(INPUT):
-##        INPUT = 'pacmd list-sink-inputs'
         cmd_FORMAT = INPUT.split()
         output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
-        output = str(output)
+        if PY3:
+            output = output.decode('utf-8')
+        else:
+            output = str(output)
         return output
 
 def equalizer(equalizer_c):
@@ -115,13 +142,13 @@ def equalizer(equalizer_c):
 def set_input_volume(index,volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
-    print index,volume
+    print (index,volume)
     gui_handler.reset_timer()
 
 def set_sink_volume(index,volume):
     volume = volume*655
     subprocess.Popen('pacmd set-sink-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
-    print index,volume
+    print (index,volume)
     gui_handler.reset_timer()
 
 def switch_input_sink(sinput,new_sink):
@@ -136,12 +163,12 @@ def move_inputs_to_sink(index):
     for inputs in inputs_to_move:
         switch_input_sink(inputs,index[0])
     for x in inputs_to_move:
-        print 'Switched: ', x[0],' '+x[4]+' ',' to ', index[2]
+        print ('Switched: ', x[0],' '+x[4]+' ',' to ', index[2])
     gui_handler.reset_timer()
 
 class PA_controller:
     def __init__(self):
-        print '-'*21+'PA_controller __init__'+'-'*21+'\n'+'-'*64
+        print ('-'*21+'PA_controller __init__'+'-'*21+'\n'+'-'*64)
         self.reload_gui = False
         self.startup = True
         self.sink_inputs2, self.sinks2 = [], []
@@ -158,22 +185,22 @@ class PA_controller:
         if self.reload_gui == False:
             if self.startup == False:
                 self.sink_inputs2, self.sinks2 = self.sink_inputs, self.sinks
-            self.sink_inputs =  subprocess_return('pacmd list-sink-inputs')
-            self.sink_inputs = self.sink_inputs.splitlines()
+            self.sink_inputs = subprocess_return('pacmd list-sink-inputs')
+            self.sink_inputs = self.sink_inputs.split('\n')
             self.sink_inputs = self.get_sink_inputs(self.sink_inputs)
             if self.startup == True:
-                print '[index]  [media.name]  [volume]  [sink]  [application.name]'
+                print ('[index]  [media.name]  [volume]  [sink]  [application.name]')
                 for x in self.sink_inputs:
-                    print '[%s - %s - %s - %s - %s]' % (x[0], x[1], x[2], x[3], x[4])
-                print '-'*64+'\n'+'-'*64
+                    print ('[%s - %s - %s - %s - %s]' % (x[0], x[1], x[2], x[3], x[4]))
+                print ('-'*64+'\n'+'-'*64)
             self.sinks = subprocess_return('pacmd list-sinks')
             self.sinks = self.sinks.splitlines()
             self.sinks = self.get_sinks(self.sinks)
             if self.startup == True:
-                print '[index]  [volume] [alsa.name]  [application.name]'
+                print ('[index]  [volume] [alsa.name]  [application.name]')
                 for x in self.sinks:
-                    print '[%s - %s - %s - %s]' % (x[0], x[1], x[2], x[3])
-                print '-'*64+'\n'+'-'*64
+                    print ('[%s - %s - %s - %s]' % (x[0], x[1], x[2], x[3]))
+                print ('-'*64+'\n'+'-'*64)
             if self.sink_inputs != self.sink_inputs2 or self.sinks != self.sinks2:
                 self.reload_gui = True
             if self.startup == True:
@@ -257,9 +284,9 @@ class PA_controller:
                 b = lines.find('sink: ')
                 if b is not -1:
                     try:
-                        app_sink = int(lines[7:10])
+                        app_sink = int(lines[b+6:b+9])
                     except:
-                        app_sink = int(lines[7:9])
+                        app_sink = int(lines[b+6:b+8])
                 b = lines.find('application.name = ')
                 if b is not -1:
                     app_name = lines[3+len('application.name = '):-1]
@@ -271,7 +298,7 @@ class PA_controller:
         return newlist2
 
 def get_dict_item(dictio,item,default):
-    for k, v in dictio.iteritems():
+    for k, v in dictio.items():
         if k == item:
             return v
     return default
@@ -533,12 +560,12 @@ class GUI_handler:
         try:
             self.active_sink = self.sinks[self.sink_index]
         except:
-            print 'Sink not found, switching to 0'
+            print ('Sink not found, switching to 0')
             try:
                 self.active_sink = self.sinks[0]
                 self.sink_index = 1
             except:
-                print 'No sink found'
+                print ('No sink found')
         self.volume = self.active_sink[1]
         self.inputs = pac.return_inputs()
         self.muted = False
@@ -791,9 +818,9 @@ if __name__ == '__main__':
     if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
         check_equalizer = 'pulse-eq-gtk'
     if check_equalizer == '0' :
-        print 'Equalizer not found'
+        print ('Equalizer not found')
     else:
-        print check_equalizer,'found'
+        print (check_equalizer,'found')
 
     root = Tk()
     root.title("sPAGUI "+ver)
@@ -803,11 +830,10 @@ if __name__ == '__main__':
 
     def startup_task():
         global gui_handler, pac
-        set_winicon(root,'load/icon.ico')
+        # set_winicon(root,'load/icon.ico')
         pac = PA_controller()
         gui_handler = GUI_handler()
 
-    ##set_winicon(root,'icon')
     ##root.protocol('WM_DELETE_WINDOW', closewin)
-    root.after(50, startup_task)
+    root.after(0, startup_task)
     root.mainloop()
