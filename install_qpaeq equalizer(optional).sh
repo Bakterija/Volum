@@ -1,3 +1,4 @@
+#!/bin/bash
 ## Source http://www.webupd8.org/2013/03/install-pulseaudio-with-built-in-system.html
 
 

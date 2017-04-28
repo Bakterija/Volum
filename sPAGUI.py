@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 PY3 = False
 import os, subprocess, sys
 try:
@@ -122,49 +123,53 @@ def set_winicon(window, path):
         window.tk.call('wm', 'iconphoto', window._w, img)
         # window.iconbitmap('path')
     except:
-        print ("Couldn't load Linux icon")
+        print ("Couldn not load Linux icon")
 
 def subprocess_return(INPUT):
         cmd_FORMAT = INPUT.split()
-        output = subprocess.Popen(cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(
+            cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
         if PY3:
             output = output.decode('utf-8')
         else:
             output = str(output)
         return output
 
-def equalizer(equalizer_c):
-    if equalizer_c == 'pulse-eq-gtk':
+def open_equalizer(*args):
+    if EQUALIZER == 'pulse-eq-gtk':
         os.system("pulseaudio-equalizer-gtk")
-    elif equalizer_c == 'qpaeq':
+    elif EQUALIZER == 'qpaeq':
         os.system("qpaeq")
 
 def set_input_volume(index,volume):
-    volume = volume*655
-    subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
-    print (index,volume)
+    volume = volume * 655
+    subprocess.Popen('pacmd set-sink-input-volume %s %s' % (index, volume),
+                     shell=True,stdout=subprocess.PIPE)
     gui_handler.reset_timer()
 
 def set_sink_volume(index,volume):
-    volume = volume*655
-    subprocess.Popen('pacmd set-sink-volume %s %s' % (index, volume), shell=True,stdout=subprocess.PIPE)
-    print (index,volume)
+    volume = volume * 655
+    subprocess.Popen('pacmd set-sink-volume %s %s' % (index, volume),
+                     shell=True,stdout=subprocess.PIPE)
     gui_handler.reset_timer()
 
 def switch_input_sink(sinput,new_sink):
-    subprocess.Popen('pacmd move-sink-input %s %s' % (sinput[0], new_sink), shell=True,stdout=subprocess.PIPE)
+    subprocess.Popen('pacmd move-sink-input %s %s' % (sinput[0], new_sink),
+                     shell=True,stdout=subprocess.PIPE)
     time.sleep(0.05)
     set_input_volume(sinput[0], sinput[2])
     gui_handler.reset_timer()
 
 def move_inputs_to_sink(index):
     inputs_to_move = pac.return_inputs()
-    subprocess.Popen("pacmd set-default-sink %s" % (index[0]), shell=True,stdout=subprocess.PIPE)
+    subprocess.Popen("pacmd set-default-sink %s" % (index[0]),
+                     shell=True,stdout=subprocess.PIPE)
     for inputs in inputs_to_move:
         switch_input_sink(inputs,index[0])
     for x in inputs_to_move:
         print ('Switched: ', x[0],' '+x[4]+' ',' to ', index[2])
     gui_handler.reset_timer()
+
 
 class PA_controller:
     def __init__(self):
@@ -189,9 +194,11 @@ class PA_controller:
             self.sink_inputs = self.sink_inputs.split('\n')
             self.sink_inputs = self.get_sink_inputs(self.sink_inputs)
             if self.startup == True:
-                print ('[index]  [media.name]  [volume]  [sink]  [application.name]')
+                print('[index]  [media.name]  [volume]  [sink]  [application.name]')
                 for x in self.sink_inputs:
-                    print ('[%s - %s - %s - %s - %s]' % (x[0], x[1], x[2], x[3], x[4]))
+                    print (
+                        '[%s - %s - %s - %s - %s]' % (
+                        x[0], x[1], x[2], x[3], x[4]))
                 print ('-'*64+'\n'+'-'*64)
             self.sinks = subprocess_return('pacmd list-sinks')
             self.sinks = self.sinks.splitlines()
@@ -303,7 +310,8 @@ def get_dict_item(dictio,item,default):
             return v
     return default
 
-class msg_binder:
+
+class MsgBinder:
     def __init__(self,frame,**kwargs):
         text = get_dict_item(kwargs,'text','None')
         font = get_dict_item(kwargs,'font','Arial')
@@ -322,7 +330,8 @@ class msg_binder:
             self.msg = Message(frame, text=text)
             self.msg.config(bg=self.bg, fg=self.fg, width=width, font=font)
         else:
-            self.msg = Label(frame, image=self.img, width=width, background=self.bg)
+            self.msg = Label(
+                frame, image=self.img, width=width, background=self.bg)
 
         self.msg.bind("<Enter>", self._enter)
         self.msg.bind("<Leave>", self._leave)
@@ -396,7 +405,8 @@ class App_handler:
         app_name = get_dict_item(kwargs,'app_name', 'n/a')
         if app_name == 'n/a':
             app_name = media_name
-        y_adjustment = 0 + self.app_placement +(self.app_place_interval* len(self.frame_list))
+        y_adjustment = 0 + self.app_placement +(
+            self.app_place_interval* len(self.frame_list))
         App_frame(self.frame, index, y_adjustment, media_name, volume, sink, app_name)
         self.frame_list[-1].frame.bind('<Button-5>', self.frame_place_UP)
         self.frame_list[-1].frame.bind('<Button-4>', self.frame_place_DOWN)
@@ -418,7 +428,9 @@ class App_handler:
             current_len, new_len = self.reset_listlen(input_list)
         cnt = 0
         for index, media_name, volume, sink, app_name in input_list:
-            self.frame_list[cnt].configure(index=index, media_name=media_name, volume=volume, sink=sink, app_name=app_name)
+            self.frame_list[cnt].configure(
+                index=index, media_name=media_name, volume=volume,
+                sink=sink, app_name=app_name)
             cnt += 1
 
     def placement_task(self, *arg):
@@ -429,16 +441,19 @@ class App_handler:
             else:
                 x.frame.place_configure(y=adj+self.app_placement)
             adj+= self.app_place_interval
+
     def frame_place_UP(self, *arg):
         self.app_placement -= self.app_place_interval/2
         self.frame.after(2, self.placement_task)
+
     def frame_place_DOWN(self, *arg):
         self.app_placement += self.app_place_interval/2
         self.frame.after(2, self.placement_task)
 
 
 class App_frame:
-    def __init__(self, parent, index, y_adjustment, media_name, volume, sink, app_name):
+    def __init__(self, parent, index, y_adjustment, media_name,
+                 volume, sink, app_name):
         global app_handler
         self.parent = parent
         self.index = index
@@ -450,7 +465,8 @@ class App_frame:
         self.button_list = []
         self.volcol = (vol_red,vol_blue)
 
-        self.frame = Frame(parent, width=int(X_root)-60, height=20,bg=gui_handler.bg_color)
+        self.frame = Frame(
+            parent, width=int(X_root)-60, height=20,bg=gui_handler.bg_color)
         self.frame.pack_propagate(0)
         self.frame.place(x=30, y=self.y_adj)
         self.frame_btn = Frame(self.frame, height=20,bg=gui_handler.bg_color)
@@ -458,13 +474,16 @@ class App_frame:
         ## appends to app_handlers list
         app_handler.frame_list.append(self)
 
-        self.name = Label(self.frame, text=self.app_name, font=('Droid sans',12,'normal'), background=gui_handler.bg_color)
+        self.name = Label(
+            self.frame, text=self.app_name, font=('Droid sans',12,'normal'),
+            background=gui_handler.bg_color)
         self.name.pack(side=LEFT)
 
         self.add_sink_buttons()
 
-        self.canva = Canvas(self.frame, width=180, height=20,
-                                   bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
+        self.canva = Canvas(
+            self.frame, width=180, height=20, bg='black', bd=0,
+            highlightthickness=0, relief= SUNKEN)
         self.canva.pack(side=RIGHT,padx=10)
         self.redraw_volume()
 
@@ -479,8 +498,11 @@ class App_frame:
             bgcol = lblue
             if int(self.sink) == int(x[0]):
                 bgcol = vol_green
-            btn = msg_binder(self.frame_btn, text=x[2][:2], bg=bgcol,width=28, bg_hov=vol_red, font=('Droid sans',11,'normal')
-                             ,func='func', command= eval_command((self.index,self.app_name,self.volume),x[0]))
+            btn = MsgBinder(
+                self.frame_btn, text=x[2][:2], bg=bgcol,width=28,
+                bg_hov=vol_red, font=('Droid sans',11,'normal'),
+                func='func', command=eval_command(
+                    (self.index, self.app_name, self.volume), x[0]))
             btn.pack(side=RIGHT,padx=2)
             self.button_list.append(btn)
     def reset_sink_buttons(self):
@@ -492,16 +514,21 @@ class App_frame:
         self.canva.delete(ALL)
         volume = float(self.volume)
         if self.volume <= 100:
-            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
+            self.canva.create_rectangle(
+                1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
         else:
-            self.canva.create_rectangle(1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
-            self.canva.create_rectangle(150, 1, volume/100*150, 19, fill=self.volcol[1], outline='')
-        self.canva.create_text((0,10),anchor=W, text=' '+str(self.volume),
-                                      font= ('Liberation sans', 11, 'bold'), fill='white')
+            self.canva.create_rectangle(
+                1, 1, volume/100*150, 19, fill=self.volcol[0], outline='')
+            self.canva.create_rectangle(
+                150, 1, volume/100*150, 19, fill=self.volcol[1], outline='')
+        self.canva.create_text(
+            (0,10),anchor=W, text=' %s' % (self.volume),
+            font= ('Liberation sans', 11, 'bold'), fill='white')
 
     def on_enter(self,*arg):
         self.volcol = (vol_red2,vol_blue2)
         self.redraw_volume()
+
     def on_leave(self,*arg):
         self.volcol = (vol_red,vol_blue)
         self.redraw_volume()
@@ -512,14 +539,16 @@ class App_frame:
             self.redraw_volume()
             gui_handler.timer2 = 160
             gui_handler.reset_timer()
-            gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
+            gui_handler.timed_event = lambda: set_input_volume(
+                self.index, self.volume)
     def volume_DOWN(self,*arg):
         if self.volume > 0:
             self.volume -= 5
             self.redraw_volume()
             gui_handler.timer2 = 160
             gui_handler.reset_timer()
-            gui_handler.timed_event = lambda: set_input_volume(self.index,self.volume)
+            gui_handler.timed_event = lambda: set_input_volume(
+                self.index, self.volume)
 
     def switch_sink(self,sinput,new_index):
         switch_input_sink(sinput,new_index)
@@ -569,21 +598,27 @@ class GUI_handler:
         self.volume = self.active_sink[1]
         self.inputs = pac.return_inputs()
         self.muted = False
-        self.back_frame = Frame(root, width=X_root, height=Y_root,bg=self.bg_color)
+        self.back_frame = Frame(
+            root, width=X_root, height=Y_root, bg=self.bg_color)
         self.back_frame.pack_propagate(0)
         self.back_frame.pack()
 
 
-        self.frame2 = Frame(self.back_frame, width=X_root, height=20,bg=self.bg_color)
+        self.frame2 = Frame(
+            self.back_frame, width=X_root, height=20,bg=self.bg_color)
         self.frame2.pack_propagate(0)
         self.frame2.pack(padx=30, pady=10)
 
         # Device:: / App:: buttons
-        self.device_btn = msg_binder(self.frame2, text="Device::", font=('Droid sans',11,'normal'), width='+70',
-                        fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.device_tab)
+        self.device_btn = MsgBinder(
+            self.frame2, text="Device::", font=('Droid sans',11,'normal'),
+            width='+70', fg='black', bg_hov='#B4B4F5', bg=self.bg_color,
+            func='func', command=self.device_tab)
         self.device_btn.pack(side=LEFT)
-        self.app_btn = msg_binder(self.frame2,text="Applications::",font=('Droid sans',11,'normal'),width='+120',
-                        fg='black', bg_hov='#B4B4F5', bg=self.bg_color, func='func', command=self.app_tab)
+        self.app_btn = MsgBinder(
+            self.frame2,text="Applications::",font=('Droid sans',11,'normal'),
+            width='+120', fg='black', bg_hov='#B4B4F5', bg=self.bg_color,
+            func='func', command=self.app_tab)
         self.app_btn.pack(side=LEFT,padx=10)
 
         root.config(bg=self.bg_color)
@@ -598,7 +633,8 @@ class GUI_handler:
 
     def reset_frame1(self):
         self.frame1.destroy()
-        self.frame1 = Frame(self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
+        self.frame1 = Frame(
+            self.back_frame, width=X_root, height=Y_root,bg=self.bg_color)
         self.frame1.pack_propagate(0)
         self.frame1.pack()
         self.timer = 0
@@ -608,21 +644,26 @@ class GUI_handler:
         self.device_btn.configure(bg=self.label_color)
         self.app_btn.configure(bg=self.bg_color)
         self.reset_frame1()
-        self.volume_canva = Canvas(self.frame1, width=150*500/178.571, height=300/10+4,
-                                   bg='black', bd=0, highlightthickness=0, relief= SUNKEN)
+        self.volume_canva = Canvas(
+            self.frame1, width=150.0*500.0/178.571, height=300/10+4,
+            bg='black', bd=0, highlightthickness=0, relief=SUNKEN)
         self.volume_canva.pack(anchor=NW,padx=30,pady=10)
         self.redraw_volume_bar()
 
-        self.eq_button = msg_binder(self.frame1, img=self.eq_picture, img_hov=self.eq_picture_hov, bg=self.bg_color,
-                                    width=60,func='func', command=lambda : equalizer(check_equalizer))
+        self.eq_button = MsgBinder(
+            self.frame1, img=self.eq_picture, img_hov=self.eq_picture_hov,
+            bg=self.bg_color, width=60,func='func',
+            command=lambda : open_equalizer())
         self.eq_button.pack(side=BOTTOM,padx=30,pady=30)
 
         if m_inputs == 1:
             bgcol = 'black'
         else:
             bgcol = vol_red2
-        self.sink_label = Label(self.frame1, text='Sink: '+self.active_sink[2], font=('Droid sans',14,'normal'),
-                                foreground=bgcol, background=self.bg_color)
+        self.sink_label = Label(
+            self.frame1, text='Sink: %s' % (self.active_sink[2]),
+            font=('Droid sans',14,'normal'), foreground=bgcol,
+            background=self.bg_color)
         self.sink_label.pack(anchor=NW,padx=30)
 
         for x in (self.volume_canva, self.sink_label, self.frame1):
@@ -637,6 +678,7 @@ class GUI_handler:
         root.bind('<KP_Add>', self.volume_UP)
         root.bind('<KP_Subtract>', self.volume_DOWN)
         root.bind('<Escape>', lambda x: {root.quit(), root.destroy()})
+        root.bind('<q>', open_equalizer)
 
         eval_command = lambda x: (lambda p: self.switch_active_sink(x))
         for i, x in enumerate(self.sinks):
@@ -695,8 +737,9 @@ class GUI_handler:
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
             self.timer2 = 200
-            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
-            root.title('Vol. - '+str(self.volume))
+            self.timed_event = lambda: set_sink_volume(
+                self.active_sink[0], self.volume)
+            root.title('Vol. - %s' % (self.volume))
     def volume_DOWN(self,*arg):
         gui_handler.reset_timer()
         if self.muted == True:
@@ -706,8 +749,9 @@ class GUI_handler:
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
             self.timer2 = 200
-            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
-            root.title('Vol. - '+str(self.volume))
+            self.timed_event = lambda: set_sink_volume(
+                self.active_sink[0],self.volume)
+            root.title('Vol. - %s' % (self.volume))
 
     def redraw_volume_bar(self):
         if self.muted == True:
@@ -718,13 +762,20 @@ class GUI_handler:
             volcol = self.volcol
         self.volume_canva.delete(ALL)
         if volume <= 100:
-            self.volume_canva.create_rectangle(2, 2, volume*500/178.571, 300/10+2, fill=volcol[0], outline='')
+            self.volume_canva.create_rectangle(
+                2, 2, volume*500/178.571, 300/10+2, fill=volcol[0], outline='')
         else:
-            self.volume_canva.create_rectangle(2, 2, 100*500/178.571, 300/10+2, fill=volcol[0], outline='')
-            self.volume_canva.create_rectangle(100*500/178.571, 2, volume*500/178.571-2, 300/10+2, fill=volcol[1], outline='')
-        self.volume_canva.create_text((0,(300/10+4)/2),anchor=W, text=' '+str(volume),
-                                      font= ('Liberation sans', 16, 'bold'), fill='white')
+            self.volume_canva.create_rectangle(
+                2, 2, 100*500/178.571, 300/10+2, fill=volcol[0], outline='')
+            self.volume_canva.create_rectangle(
+                100*500/178.571, 2, volume*500/178.571-2,
+                300/10+2, fill=volcol[1], outline='')
+        self.volume_canva.create_text(
+            (0,(300/10+4)/2),anchor=W, text=' '+str(volume),
+            font= ('Liberation sans', 16, 'bold'), fill='white')
+
     def refresh(self):
+        '''Refreshes Pulse Audio information'''
         pac.reset_sinks_inputs()
         if pac.reload_gui == True:
             pac.reload_gui = False
@@ -737,14 +788,16 @@ class GUI_handler:
             elif self.active_tab == 'app':
                 app_handler.update(self.inputs)
             root.title('Vol. - '+str(self.volume))
-    ## Refreshes Pulse Audio information
+
     def timer_task(self):
+        '''Runs a function, usually volume change,
+        a set amount of time after last input'''
         self.timer -= 100
         if self.timer < 0:
             self.reset_timer()
             self.refresh()
         root.after(100, self.timer_task)
-    ## Runs a function, usually volume change, a set amount of time after last input
+
     def timer2_task(self):
         if self.timer2 > 0:
             self.timer2 -= 20
@@ -752,6 +805,7 @@ class GUI_handler:
                 self.timed_event()
                 self.timer2 = -99
         root.after(20, self.timer2_task)
+
     def reset_timer(self):
         self.timer = 1000
 
@@ -764,18 +818,21 @@ class GUI_handler:
             gui_handler.reset_timer()
             self.redraw_volume_bar()
             self.bg_color = window_bgcol2
-            for x in self.eq_button, self.frame2, self.sink_label, self.frame1, self.back_frame:
+            for x in (self.eq_button, self.frame2, self.sink_label,
+                      self.frame1, self.back_frame):
                 x.configure(bg=self.bg_color)
             root.title("Muted")
         else:
             self.muted = False
             self.volume = self.muted_volume
             self.timer2 = 40
-            self.timed_event = lambda: set_sink_volume(self.active_sink[0],self.volume)
+            self.timed_event = lambda: set_sink_volume(
+                self.active_sink[0],self.volume)
             gui_handler.reset_timer()
             self.redraw_volume_bar()
             self.bg_color = window_bgcol
-            for x in self.eq_button, self.frame2, self.sink_label, self.frame1, self.back_frame:
+            for x in (self.eq_button, self.frame2, self.sink_label,
+                      self.frame1, self.back_frame):
                 x.configure(bg=self.bg_color)
             root.title("sPAGUI "+ver)
 
@@ -808,19 +865,19 @@ if __name__ == '__main__':
     blgr = "#%02x%02x%02x" % (29,62,84)
     blgr2 = "#%02x%02x%02x" % (14,47,59)
     vol_yellow = "#%02x%02x%02x" % (200,200,120)
-    check_equalizer = '0'
+    EQUALIZER = None
     if os.path.exists('/usr/bin/qpaeq') == True:
-        check_equalizer = 'qpaeq'
-    if os.path.exists('/usr/local/bin/qpaeq') == True:
-        check_equalizer = 'qpaeq'
-    if os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
-        check_equalizer = 'pulse-eq-gtk'
-    if os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
-        check_equalizer = 'pulse-eq-gtk'
-    if check_equalizer == '0' :
-        print ('Equalizer not found')
+        EQUALIZER = 'qpaeq'
+    elif os.path.exists('/usr/local/bin/qpaeq') == True:
+        EQUALIZER = 'qpaeq'
+    elif os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
+        EQUALIZER = 'pulse-eq-gtk'
+    elif os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
+        EQUALIZER = 'pulse-eq-gtk'
+    if EQUALIZER:
+        print ('Found equalizer: %s' % EQUALIZER)
     else:
-        print (check_equalizer,'found')
+        print ('Equalizer not found')
 
     root = Tk()
     root.title("sPAGUI "+ver)
