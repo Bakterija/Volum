@@ -1,6 +1,11 @@
 #!/usr/bin/env python
-PY3 = False
+
 import os, subprocess, sys
+from app_modules.pyver import PY3
+from app_modules.global_vars import *
+from app_modules import file_handler
+from app_modules.pa_controller import PAController
+from app_modules.widgets.msg_binder import MsgBinder
 try:
     from Tkinter import *
     from Tkinter import Button as tkButton
@@ -42,74 +47,10 @@ except:
     from PIL import ImageTk as ImageTk
     import tkinter.font as tkFont
     import tkinter.messagebox as tkMessageBox
-    PY3 = True
 from threading import Thread
 from random import randrange
 from PIL import Image as Pillow_image
 import time
-
-
-def readf(filename):
-    file = filename
-    try:
-        f = open(file, 'rU')
-    except:
-        savef('',filename)
-        f = open(file, 'rU')
-    a = f.read()
-    a = str.splitlines(a)
-    f.close()
-    return a
-
-def savef(text,file):
-    f = open(file, 'w')
-    f.write(text)
-    f.close()
-
-def edit_settings(text,text_find,new_value):
-    count = 0
-    newlist = []
-    for lines in text:
-        b = lines.find(text_find)
-        if b is not -1:
-            c = text_find + '=' + str(new_value)
-            newlist.append(c)
-        else:
-            newlist.append(lines)
-        count+=1
-    count = 1
-    return newlist
-
-def read_settings(*arg):
-    global sys_path
-    a = readf('load/settings.ini')
-    a = get_settings(a,arg[0],arg[1])
-    return a
-
-def get_settings(text,text_find,default_value):
-    for lines in text:
-        b = lines.find(text_find)
-        if b is not -1:
-            c = lines[len(text_find):]
-    ## Checks if it exists and appends something, if not
-    try:
-        if c == '':
-            c = default_value
-            if default_value != '':
-                write_settings(text_find[:-1],'\n'+c)
-    except:
-        c = default_value
-        fh = open('load/settings.ini', 'a')
-        fh.write('\n'+str(text_find)+str(c))
-        fh.close()
-    return c
-
-def write_settings(text_find,new_value):
-    global sys_path
-    a = readf('load/settings.ini')
-    a = edit_settings(a,text_find,new_value)
-    text = a = '\n'.join(str(e) for e in a)
-    savef(text,'load/settings.ini')
 
 def return_picture(path):
     img = Pillow_image.open(path)
@@ -124,16 +65,6 @@ def set_winicon(window, path):
         # window.iconbitmap('path')
     except:
         print ("Couldn not load Linux icon")
-
-def subprocess_return(INPUT):
-        cmd_FORMAT = INPUT.split()
-        output = subprocess.Popen(
-            cmd_FORMAT, stdout=subprocess.PIPE).communicate()[0]
-        if PY3:
-            output = output.decode('utf-8')
-        else:
-            output = str(output)
-        return output
 
 def open_equalizer(*args):
     if EQUALIZER == 'pulse-eq-gtk':
@@ -170,213 +101,11 @@ def move_inputs_to_sink(index):
         print ('Switched: ', x[0],' '+x[4]+' ',' to ', index[2])
     gui_handler.reset_timer()
 
-
-class PA_controller:
-    def __init__(self):
-        print ('-'*21+'PA_controller __init__'+'-'*21+'\n'+'-'*64)
-        self.reload_gui = False
-        self.startup = True
-        self.sink_inputs2, self.sinks2 = [], []
-        self.reset_sinks_inputs()
-        self.reset_sinks_inputs()
-
-    def return_sinks(self):
-        return self.sinks
-
-    def return_inputs(self):
-        return self.sink_inputs
-
-    def reset_sinks_inputs(self):
-        if self.reload_gui == False:
-            if self.startup == False:
-                self.sink_inputs2, self.sinks2 = self.sink_inputs, self.sinks
-            self.sink_inputs = subprocess_return('pacmd list-sink-inputs')
-            self.sink_inputs = self.sink_inputs.split('\n')
-            self.sink_inputs = self.get_sink_inputs(self.sink_inputs)
-            if self.startup == True:
-                print('[index]  [media.name]  [volume]  [sink]  [application.name]')
-                for x in self.sink_inputs:
-                    print (
-                        '[%s - %s - %s - %s - %s]' % (
-                        x[0], x[1], x[2], x[3], x[4]))
-                print ('-'*64+'\n'+'-'*64)
-            self.sinks = subprocess_return('pacmd list-sinks')
-            self.sinks = self.sinks.splitlines()
-            self.sinks = self.get_sinks(self.sinks)
-            if self.startup == True:
-                print ('[index]  [volume] [alsa.name]  [application.name]')
-                for x in self.sinks:
-                    print ('[%s - %s - %s - %s]' % (x[0], x[1], x[2], x[3]))
-                print ('-'*64+'\n'+'-'*64)
-            if self.sink_inputs != self.sink_inputs2 or self.sinks != self.sinks2:
-                self.reload_gui = True
-            if self.startup == True:
-                self.startup = False
-
-    def get_sinks(self,a):
-        li_count = 0
-        index = -1
-        newlist = []
-        ## 0index, 1volume, 2name
-        newlist2 = []
-        for lines in a:
-            b = lines.find('index:')
-            if b is not -1:
-                newlist.append([lines[b+7:]])
-                newlist2.append([lines[b+7:]])
-        for lines in a:
-            b = lines.find('index:')
-            if index > -1:
-                newlist[index].append(lines)
-            if b is not -1:
-                index += 1
-        index = 0
-        for indexes in newlist:
-            for text in indexes:
-                b = text.find('alsa.name')
-                if b is not -1:
-                    newlist2[index].append(text[b+13:-1])
-                b = text.find('volume:')
-                if b is not -1:
-                    c = text.find('base volume:')
-                    if c is -1:
-                        b = text.find('%')
-                        newlist2[index].append(int(text[b-3:b]))
-            index+=1
-        count = 0
-        for x in newlist2:
-            if len(x) < 3:
-                newlist2[count].append('Noname')
-            count+= 1
-        count = 0
-        for x in newlist2:
-            x.append(count)
-            count+= 1
-        return newlist2
-
-    def get_sink_inputs(self,a):
-        li_count = 0
-        index = -1
-        app_index = []
-        app_name = []
-        app_volume = []
-        app_sink_index = []
-        newlist = []
-        newlist2 = []
-        templist = []
-        for lines in a:
-            b = lines.find('index:')
-            if b is not -1:
-                newlist.append([lines[b+7:]])
-                newlist2.append([lines[b+7:]])
-        for lines in a:
-            b = lines.find('index:')
-            if index > -1:
-                newlist[index].append(lines)
-            if b != -1:
-                index += 1
-        index = 0
-        for indexes in newlist:
-            media_name,app_volume,app_sink,app_name = 'n/a','n/a','n/a','n/a'
-            for lines in indexes:
-                b = lines.find('media.name')
-                if b is not -1:
-                    media_name = lines[b+14:-1]
-                b = lines.find('volume:')
-                if b is not -1:
-                    c = lines.find('base volume:')
-                    if c is -1:
-                        b = lines.find('%')
-                        app_volume = int(lines[b-3:b])
-                b = lines.find('sink: ')
-                if b is not -1:
-                    try:
-                        app_sink = int(lines[b+6:b+9])
-                    except:
-                        app_sink = int(lines[b+6:b+8])
-                b = lines.find('application.name = ')
-                if b is not -1:
-                    app_name = lines[3+len('application.name = '):-1]
-            newlist2[index].append(media_name)
-            newlist2[index].append(app_volume)
-            newlist2[index].append(app_sink)
-            newlist2[index].append(app_name)
-            index+= 1
-        return newlist2
-
-def get_dict_item(dictio,item,default):
+def get_dict_item(dictio, item, default):
     for k, v in dictio.items():
         if k == item:
             return v
     return default
-
-
-class MsgBinder:
-    def __init__(self,frame,**kwargs):
-        text = get_dict_item(kwargs,'text','None')
-        font = get_dict_item(kwargs,'font','Arial')
-        width = get_dict_item(kwargs,'width','+10')
-        height = get_dict_item(kwargs,'height','+5')
-        self.fg = get_dict_item(kwargs,'fg','black')
-        self.fg_hov = get_dict_item(kwargs,'fg_hov','')
-        self.bg = get_dict_item(kwargs,'bg','')
-        self.bg_hov = get_dict_item(kwargs,'bg_hov','')
-        self.function = get_dict_item(kwargs,'func','False')
-        self.function_exc = get_dict_item(kwargs,'command','False')
-        self.img = get_dict_item(kwargs,'img','')
-        self.img_hov = get_dict_item(kwargs,'img_hov','')
-
-        if self.img == '':
-            self.msg = Message(frame, text=text)
-            self.msg.config(bg=self.bg, fg=self.fg, width=width, font=font)
-        else:
-            self.msg = Label(
-                frame, image=self.img, width=width, background=self.bg)
-
-        self.msg.bind("<Enter>", self._enter)
-        self.msg.bind("<Leave>", self._leave)
-        self.msg.bind("<Button-1>", self._click)
-
-    def destroy(self):
-        self.msg.destroy()
-
-    def bind(self,func):
-        self.msg.bind(func)
-
-    def pack(self,**kwargs):
-        side = get_dict_item(kwargs,'side','top')
-        anchor = get_dict_item(kwargs,'anchor','nw')
-        padx = get_dict_item(kwargs,'padx','0')
-        pady = get_dict_item(kwargs,'pady','0')
-        self.msg.pack(side=side, anchor=anchor, padx=padx, pady=pady)
-
-    def _enter(self, event):
-        self.msg.config(cursor="hand2")
-        if self.fg_hov != '':
-            self.msg.config(fg=self.fg_hov)
-        if self.bg_hov != '':
-            self.msg.config(bg=self.bg_hov)
-        if self.img_hov != '':
-            self.msg.config(image= self.img_hov)
-
-    def _leave(self, event):
-        self.msg.config(cursor="")
-        if self.fg_hov != '':
-            self.msg.config(fg=self.fg)
-        if self.bg_hov != '':
-            self.msg.config(bg=self.bg)
-        if self.img_hov != '':
-            self.msg.config(image= self.img)
-
-    def _click(self, event):
-        if self.function == 'func':
-            self.function_exc()
-        elif self.function == 'link' and self.function_exc != 'none':
-            open_address_in_webbrowser(self.function_exc)
-
-    def configure(self,**kwargs):
-        self.bg = get_dict_item(kwargs,'bg','')
-        self.msg.config(bg=self.bg)
 
 
 class App_handler:
@@ -708,11 +437,12 @@ class GUI_handler:
         else:
             m_inputs = 0
             self.sink_label.configure(foreground=vol_red2)
-        write_settings('m_inputs', m_inputs)
+        file_handler.write_settings('m_inputs', m_inputs)
 
     def on_vol_enter(self,*arg):
         self.volcol = (vol_red2,vol_blue2)
         self.redraw_volume_bar()
+
     def on_vol_leave(self,*arg):
         self.volcol = (vol_red,vol_blue)
         self.redraw_volume_bar()
@@ -723,7 +453,7 @@ class GUI_handler:
         self.sink_label.config(text='Sink: '+self.sinks[i][2])
         self.sink_index = i
         self.active_sink = self.sinks[i]
-        write_settings('default_sink',self.sink_index)
+        file_handler.write_settings('default_sink',self.sink_index)
         self.volume = self.active_sink[1]
         self.redraw_volume_bar()
         if m_inputs == 1:
@@ -836,61 +566,27 @@ class GUI_handler:
             for x in (self.eq_button, self.frame2, self.sink_label,
                       self.frame1, self.back_frame):
                 x.configure(bg=self.bg_color)
-            root.title("sPAGUI "+ver)
+            root.title('sPAGUI %s' % (__VERSION__))
 
 if __name__ == '__main__':
     ## Load settings
-    default_sink = int(read_settings('default_sink=','0'))
-    X_root = read_settings('X_root=','500')
-    Y_root = read_settings('Y_root=','300')
-    m_inputs = int(read_settings('m_inputs=',1))
+    default_sink = int(file_handler.read_settings('default_sink=','0'))
+    X_root = file_handler.read_settings('X_root=','500')
+    Y_root = file_handler.read_settings('Y_root=','300')
+    m_inputs = int(file_handler.read_settings('m_inputs=',1))
     ## Global vars
-    ver = '2'
-    bgg1 = '#DCDCDC'
-    window_bgcol = '#EBEBEB'
-    window_bgcol2 = '#C8C8C8'
-    vol_grey = "#%02x%02x%02x" % (235,235,235)
-    greyer = "#%02x%02x%02x" % (225,225,225)
-    greyest = "#%02x%02x%02x" % (215,215,215)
-    dark_red = "#%02x%02x%02x" % (180,25,25)
-    dark_red2 = "#%02x%02x%02x" % (220,70,70)
-    dark = "#%02x%02x%02x" % (35,35,35)
-    ldark = "#%02x%02x%02x" % (55,55,55)
-    vol_red = "#%02x%02x%02x" % (255,100,100)
-    vol_blue = "#%02x%02x%02x" % (80,80,150)
-    vol_red2 = "#%02x%02x%02x" % (215,70,70)
-    vol_blue2 = "#%02x%02x%02x" % (50,50,120)
-    dblue = "#%02x%02x%02x" % (50,50,120)
-    lblue = "#%02x%02x%02x" % (130,130,220)
-    llblue = "#%02x%02x%02x" % (180,180,245)
-    vol_green = "#%02x%02x%02x" % (0,255,0)
-    blgr = "#%02x%02x%02x" % (29,62,84)
-    blgr2 = "#%02x%02x%02x" % (14,47,59)
-    vol_yellow = "#%02x%02x%02x" % (200,200,120)
-    EQUALIZER = None
-    if os.path.exists('/usr/bin/qpaeq') == True:
-        EQUALIZER = 'qpaeq'
-    elif os.path.exists('/usr/local/bin/qpaeq') == True:
-        EQUALIZER = 'qpaeq'
-    elif os.path.exists('/usr/bin/pulseaudio-equalizer-gtk') == True:
-        EQUALIZER = 'pulse-eq-gtk'
-    elif os.path.exists('/usr/local/bin/pulseaudio-equalizer-gtk') == True:
-        EQUALIZER = 'pulse-eq-gtk'
-    if EQUALIZER:
-        print ('Found equalizer: %s' % EQUALIZER)
-    else:
-        print ('Equalizer not found')
+    __VERSION__ = 2
 
     root = Tk()
-    root.title("sPAGUI "+ver)
+    root.title('sPAGUI %s' % (__VERSION__))
     root.minsize(500,300)
     root.geometry('%sx%s' % (X_root,Y_root))
     maxsize = "5x5"
 
     def startup_task():
         global gui_handler, pac
-        # set_winicon(root,'load/icon.ico')
-        pac = PA_controller()
+        set_winicon(root,'load/icon.ico')
+        pac = PAController()
         gui_handler = GUI_handler()
 
     ##root.protocol('WM_DELETE_WINDOW', closewin)
