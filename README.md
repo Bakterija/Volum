@@ -18,7 +18,9 @@ Change default audio device with number buttons.
 
 Toggle application output device switching on default device shange with  "E"
 
-Toggle mute with Right click
+Toggle mute with "M" or "Mouse right click"
+
+Open equalizer with "Q"
 
 Use "F1" and "F2" hotkeys to switch between tabs
 

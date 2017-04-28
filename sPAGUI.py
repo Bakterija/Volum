@@ -679,6 +679,7 @@ class GUI_handler:
         root.bind('<KP_Subtract>', self.volume_DOWN)
         root.bind('<Escape>', lambda x: {root.quit(), root.destroy()})
         root.bind('<q>', open_equalizer)
+        root.bind('<m>', self.toggle_mute)
 
         eval_command = lambda x: (lambda p: self.switch_active_sink(x))
         for i, x in enumerate(self.sinks):
@@ -740,6 +741,7 @@ class GUI_handler:
             self.timed_event = lambda: set_sink_volume(
                 self.active_sink[0], self.volume)
             root.title('Vol. - %s' % (self.volume))
+
     def volume_DOWN(self,*arg):
         gui_handler.reset_timer()
         if self.muted == True:
@@ -809,7 +811,7 @@ class GUI_handler:
     def reset_timer(self):
         self.timer = 1000
 
-    def toggle_mute(self,*arg):
+    def toggle_mute(self, *arg):
         if self.muted == False:
             self.muted = True
             self.muted_volume, self.volume = self.volume, 0
