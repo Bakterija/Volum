@@ -1,14 +1,12 @@
-# sPAGUI - simple Pulse Audio GUI with optional equalizers
-![Tab1.](https://github.com/Bakterija/Volum/tree/master/load/screenshot.png)
-![Tab2.](https://github.com/Bakterija/Volum/tree/master/load/screenshot2.png)
-Uses python and tkinter -- install with "install.sh"
+# sPAGUI - simple Pulse Audio GUI with optional equalizer install script
+![Tab1.](https://github.com/Bakterija/sPaGUI/tree/master/load/screenshot.png)
+![Tab2.](https://github.com/Bakterija/sPAGUI/tree/master/load/screenshot2.png)
+Uses python and tkinter -- install requirements with "install.sh"
 
 ## Tested on Debian, Mint and Ubuntu
 Run "install.sh" to install required software
 
-Run "install qpaeq**.sh" to install an optional equalizer
-
-Run "install pulseaudio-**.sh" to install a different optional equalizer
+Run "install pulseaudio-**.sh" to install an optional system wide equalizer
 
 Run "make desktop launcher.py" to make a desktop launcher
 
