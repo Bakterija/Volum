@@ -1,6 +1,7 @@
 find_sinks.pyc
 git_uploader.sh
 __pycache__
+*.pyc
 /load/optionspic.png
 /load/optionspic_hov.png
 /load/sinks.txt
