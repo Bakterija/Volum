@@ -464,7 +464,7 @@ class GUI_handler:
         if self.muted == True:
             self.toggle_mute()
         if self.volume < 150:
-            self.volume += 5
+            self.volume += 2
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
             self.timer2 = 200
@@ -477,7 +477,7 @@ class GUI_handler:
         if self.muted == True:
             self.toggle_mute()
         if self.volume > 0:
-            self.volume -= 5
+            self.volume -= 2
             if self.active_tab == 'device':
                 self.redraw_volume_bar()
             self.timer2 = 200
