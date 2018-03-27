@@ -1,0 +1,161 @@
+:root {
+    --console-height: 300px;
+    --console-height-negative: -300px;
+    --col-spagui-blue1: rgb(60, 70, 120);
+    --col-spagui-blue2: rgb(50, 60, 100);
+    --col-spagui-blue3: rgb(80, 90, 140);
+}
+
+body {
+    font-size: 12px;
+    /* min-height: 1000px; */
+}
+
+#console_div {
+    height: var(--console-height);
+    width: 100%;
+    position: fixed;
+    z-index: 3;
+    background-color: rgba(70, 119, 167, 0.97);
+    overflow-y: scroll;
+}
+
+.console_message {
+    color: white;
+}
+
+@keyframes animate_console_in {
+    0%      {top: var(--console-height-negative);}
+    100%    {top: 0px;}
+}
+
+@keyframes animate_console_out {
+    0%      {top: 0px;}
+    100%    {top: var(--console-height-negative);}
+}
+
+.console_div_inside {
+    animation-name: animate_console_in;
+    animation-duration: 200ms;
+    top: 0px;
+    animation-timing-function: ease-out;
+}
+
+.console_div_outside {
+    animation-name: animate_console_out;
+    animation-duration: 200ms;
+    top: var(--console-height-negative);
+    animation-timing-function: ease-out;
+}
+
+#content_div {
+    margin-left: 200px;
+    padding: 50px 50px;
+}
+
+.slidecontainer {
+    width: 100%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+li {
+    line-height: 1em;
+}
+
+.sink-div {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.sink-input-div {
+    margin-bottom: 10px;
+}
+
+
+.spagui-blue1 {
+    background-color: var(--col-spagui-blue1);
+}
+
+.spagui-blue2 {
+    background-color: var(--col-spagui-blue2);
+}
+
+#sidebar_title {
+    max-height: 30px;
+    height: 30px;
+    background-color: var(--col-spagui-blue1);
+}
+
+.spagui-sidebar {
+    width: 150px;
+    background-color: var(--col-spagui-blue2);
+    color: rgb(230, 230, 240);
+    height: 100%;
+    position:fixed !important;
+    z-index: 1;
+    overflow:auto;
+}
+
+.spagui-bar-item {
+    text-align: left;
+    width: 100%;
+    padding-top: 1px;
+    font-size: 14px;
+}
+
+.spagui-bar-subitem {
+    text-align: right;
+    width: 100%;
+    padding-top: 1px;
+    font-size: 10px;
+}
+
+.spagui-bar-item:focus, .spagui-bar-item:hover,
+.spagui-bar-subitem:focus, .spagui-bar-subitem:hover{
+    color: white !important;
+    background-color: var(--col-spagui-blue3) !important;
+    color: rgb(118, 206, 162) !important;
+    
+}
+
+.spagui-bar-item:focus, .spagui-bar-subitem:focus {
+    outline: 0px !important;
+    /* outline-color: tomato; */
+    /* border: 0px; */
+    border: 0px solid greenyellow;
+    /* box-shadow: 0 0 2px #719ECE; */
+}

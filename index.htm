@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- <link rel="shortcut icon" href="/img/logo.png"> -->
+<link rel='stylesheet' href='css/w3.css'>
+<link rel='stylesheet' href='css/style.css'>
+<script src='js/react.development.js'></script>
+<script src='js/react-dom.development.js'></script>
+<script src='js/babel.min.js'></script>
+<title>sPAGUI3</title>
+</head>
+<body>
+<div id='console_div' class='console_div_outside' hidden>
+    <span id='cmsg' hidden class='console_message'></span>
+</div>
+
+<sidebar class='spagui-sidebar'>
+    <div id='sidebar-sink-div'>
+        <button class='w3-button spagui-bar-item'>Sinks</button>
+        <div id='sidebar-sink-subdiv'></div>
+    </div>
+
+    <div id='sidebar-input-div'>
+        <button class='w3-button spagui-bar-item'>Inputs</button>
+        <div id='sidebar-input-subdiv'></div>
+    </div>
+</sidebar>
+
+<div id='content_div'>
+    <h1 id='HA1'>Init</h1>
+
+    <span id='patest'></span>
+    <id id='react_test0'></id>
+    <id id='react_test'></id>
+
+    <!-- <div class="slidecontainer">
+        <input type="range" min="1" max="100" value="50" 
+        class="slider" id="myRange">
+    </div> -->
+</div>
+<script>
+var remote = require('electron').remote;
+var exec = require('child_process').exec;
+function execute(command, callback){
+    exec(command, function(error, stdout, stderr){
+        callback(stdout);
+    })
+}
+
+class PulseAudioInterface{
+    constructor(){
+        this.data = null;
+        this.last_update = Date.now();
+    }
+
+    pa_info_callback(text){
+        this.last_update = Date.now();
+        this.data = JSON.parse(text);
+    }
+
+    DoubleCallback(callback) {
+        var obj = this;
+        return function(text){
+            obj.pa_info_callback(text);
+            callback(text);
+        }
+    }
+
+    update_sinks(callback=null){
+        var cmd = 'python3 pacmd_parser.py sink-inputs nice-format';
+        execute(cmd, this.pa_info_callback.bind(this));
+    }
+
+    update_sink_inputs(callback=null){
+        var cmd = 'python3 pacmd_parser.py sink-inputs';
+        execute(cmd, this.pa_info_callback.bind(this));
+    }
+
+    update_all(callback=null){
+        var cmd = 'python3 pacmd_parser.py sinks sink-inputs';
+        if (callback){
+            execute(cmd, this.DoubleCallback(callback));
+        } else {
+            execute(cmd, this.pa_info_callback.bind(this));
+        }
+    }
+}
+
+function test(){
+    callback = function(text){
+    document.write(text);
+    }
+    execute('top -b -n1', callback);
+}
+// var spag = remote.getGlobal('spagui');
+
+function on_key_down(e){
+    if (e.key == 'r'){
+        location.reload();
+    }
+}
+
+function on_key_up(e){
+    if (e.key == '`'){
+        slide_console();
+    }
+}
+
+function slide_console(){
+    var el = document.getElementById('console_div');
+    var cl_a = 'console_div_outside';
+    var cl_b = 'console_div_inside';
+    
+    if (el.classList.contains(cl_a)){
+        el.classList.remove(cl_a);
+        el.classList.add(cl_b);
+    } else {
+        el.classList.remove(cl_b);
+        el.classList.add(cl_a);
+    }
+    el.style.display = 'block';
+}
+
+function addZero(i) {
+    if (i < 10) {
+        i = "0" + i;
+    }
+    return i;
+}
+
+function write_console(text){
+    var el = document.getElementById('cmsg');
+    var clone = el.cloneNode(true);
+    clone.innerHTML = text;
+    clone.style.display = 'block';
+
+    var d = new Date();
+    var h = addZero(d.getHours());
+    var m = addZero(d.getMinutes());
+    var s = addZero(d.getSeconds());
+    clone.innerHTML = h + ":" + m + ":" + s + '   ' + text;
+    document.getElementById('console_div').appendChild(clone);
+}
+pa_interface = new PulseAudioInterface();
+
+function init(){
+    pa_interface.update_all();
+    var loadevent = window.performance.timing.domContentLoadedEventEnd;
+    var navstartevent = window.performance.timing.navigationStart;
+    var loadTime = loadevent - navstartevent;
+    write_console('Page rendered: in ' + loadTime + 'ms');
+    pa_interface.update_all(function(text){console.log(text);});
+}
+
+function update(){
+    try{
+        interval_counter += 1;
+        if (interval_counter == 5){
+            interval_counter = 0;
+            var el = document.getElementById('HA1');
+            el.innerHTML = "Update";
+        }
+        pa_interface.update_all();
+        update_react();
+    } catch (error){
+        write_console(error.stack);
+        throw(error);
+    }
+}
+
+function sidebar_click(button_name){
+    write_console('sidebar_click: ' + button_name);
+}
+
+window.onkeydown = on_key_down;
+window.onkeyup = on_key_up;
+window.onload = init;
+interval_counter = 0;
+window.setInterval(update, 200);
+// globalShortcut.register('F5', location.reload);
+
+function a_or_b(a, b){
+    if (a){
+        return a;
+    }
+    return b;
+}
+
+function get_sink_name(sink_data){
+    var has_properties = sink_data.hasOwnProperty('properties');
+    if (has_properties){
+        if (sink_data.properties.hasOwnProperty('alsa.card_name')){
+            return sink_data['properties']['alsa.card_name'];
+        }
+        if (sink_data.properties.hasOwnProperty('device.ladspa.name')){
+            return sink_data['properties']['device.ladspa.name'];
+        }
+    }
+    return ''
+}
+</script>
+<script type='text/babel'>
+function update_react(){
+    if (pa_interface.data === null) return;
+    update_sidebar_sinks_inputs()
+    const indexes = pa_interface.data['sink input indexes'];
+    var si = pa_interface.data['sink inputs'];
+    // write_console(indexes);
+    var sactive = pa_interface.data['active sink'];
+    var sk = pa_interface.data['sinks'][sactive];
+
+    ReactDOM.render(
+        <div className='sink-div'>
+            <span>Sink: {sactive}</span>
+            <br/>
+            <span>Volume: {sk['volume']['front-left']['percent']}</span>
+        </div>,
+        document.getElementById('react_test0')
+    );
+
+    const listItems = indexes.map((i) =>
+        <div key={i} className='sink-input-div'>
+            <li>Index: {si[i]['index']}</li>
+            <li>Name: {a_or_b(si[i]['app name'], si[i]['media name'])}</li>
+            <li>Volume: {si[i]['volume']}</li>
+            <li>Sink: {si[i]['sink']}</li>
+        </div>
+    );
+    ReactDOM.render(
+        listItems,
+        document.getElementById('react_test')
+    );
+}
+
+function update_sidebar_sinks_inputs(){
+    // Render sink subdiv
+    var indexes = pa_interface.data['sink indexes'];
+    var sactive = pa_interface.data['active sink'];
+    var sinks = pa_interface.data['sinks'];
+    const listItems = indexes.map((i) =>
+        <button key={i} className='w3-button spagui-bar-subitem'>
+            {get_sink_name(sinks[i])}
+        </button>
+    );
+    ReactDOM.render(
+        listItems,
+        document.getElementById('sidebar-sink-subdiv')
+    );
+
+    // Render sink input subdiv
+    indexes = pa_interface.data['sink input indexes'];
+    var inputs = pa_interface.data['sink inputs'];
+    const listItems2 = indexes.map((i) =>
+        <button key={i} className='w3-button spagui-bar-subitem'>
+            {a_or_b(inputs[i]['app name'], inputs[i]['media name'])}
+        </button>
+    );
+    ReactDOM.render(
+        listItems2,
+        document.getElementById('sidebar-input-subdiv')
+    );
+}
+
+</script>
+</body>
+</html>

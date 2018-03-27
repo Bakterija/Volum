@@ -1,0 +1,12 @@
+{
+    "name": "spagui",
+    "version": "3.0.0",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "start-nogpu": "electron . --disable-gpu --force-cpu-draw"
+    },
+    "devDependencies": {
+        "electron": "^1.8.4"
+    }
+}
