@@ -155,36 +155,47 @@ def parse_sink_inputs(text):
     return newlist2
 
 
+def get_sinks():
+    result = {}
+    cmd = ['pacmd', 'list-sinks']
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    res = p.communicate()[0]
+    res = res.decode('utf-8')
+    pa_info_dict = parseList(res)
+    result['active sink'] = pa_info_dict['active sink']
+    result['sink indexes'] = pa_info_dict['sink indexes']
+    result['sinks'] = {}
+    # result['sink indexes']
+    for k in pa_info_dict['sink indexes']:
+        result['sinks'][k] = pa_info_dict[k]
+    return result
+
+def get_sink_inputs():
+    result = {}
+    cmd = ['pacmd', 'list-sink-inputs']
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    res = p.communicate()[0]
+    res = res.decode('utf-8')
+    sink_input_list = parse_sink_inputs(res)
+    
+    result['sink inputs'] = {}
+    result['sink input indexes'] = []
+    for x in sink_input_list:
+        result['sink input indexes'].append(x[0])
+        result['sink inputs'][x[0]] = {
+            'index': x[0], 'media name': x[1], 'volume': x[2],
+            'sink': x[3], 'app name': x[4]
+        }
+    return result
+
+
 if __name__ == '__main__':
     result = {}
     if 'sinks' in argv:
-        cmd = ['pacmd', 'list-sinks']
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        res = p.communicate()[0]
-        res = res.decode('utf-8')
-        pa_info_dict = parseList(res)
-        result['active sink'] = pa_info_dict['active sink']
-        result['sink indexes'] = pa_info_dict['sink indexes']
-        result['sinks'] = {}
-        # result['sink indexes']
-        for k in pa_info_dict['sink indexes']:
-            result['sinks'][k] = pa_info_dict[k]
+        result.update(get_sinks())
 
     if 'sink-inputs' in argv:
-        cmd = ['pacmd', 'list-sink-inputs']
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        res = p.communicate()[0]
-        res = res.decode('utf-8')
-        sink_input_list = parse_sink_inputs(res)
-        
-        result['sink inputs'] = {}
-        result['sink input indexes'] = []
-        for x in sink_input_list:
-            result['sink input indexes'].append(x[0])
-            result['sink inputs'][x[0]] = {
-                'index': x[0], 'media name': x[1], 'volume': x[2],
-                'sink': x[3], 'app name': x[4]
-            }
+        result.update(get_sink_inputs())
 
     if 'nice-format' in argv:
         print(json.dumps(result, sort_keys=True, indent=4))
