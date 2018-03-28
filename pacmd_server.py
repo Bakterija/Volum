@@ -1,4 +1,5 @@
 from flask import Flask
+from sys import argv
 import pacmd_parser
 import json
 import os
@@ -22,3 +23,11 @@ def get_pa_data():
 @app.route("/")
 def hello():
     return file_get_contents('index.htm')
+
+if __name__ == '__main__':
+    host = '0.0.0.0'
+    if 'debug' in argv:
+        app.debug = True
+    if 'localhost' in argv:
+        host = 'localhost'
+    app.run(host=host, port=5000)
