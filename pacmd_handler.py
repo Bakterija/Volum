@@ -4,6 +4,13 @@ from sys import argv
 import json
 import re
 
+def shell_exec(cmd):
+    """Returns tuple with stdout, stderr"""
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    out = out.decode('utf-8')
+    err = err.decode('utf-8')
+    return out, err
 
 def parseList(output):
     lines = output.split('\n')
@@ -195,6 +202,38 @@ def get_sink_inputs():
             'sink': x[3], 'app name': x[4]
         }
     return result
+
+def set_input_volume(index, volume):
+    volume = volume * 655
+    Popen(
+        'pacmd set-sink-input-volume %s %s' % (index, volume),
+        shell=True, stdout=PIPE)
+
+def set_sink_volume(index, volume):
+    volume = int(volume) * 655
+    cmd = ['pacmd', 'set-sink-volume', str(index), str(volume)]
+    res = shell_exec(cmd)
+    if res[0].find('No sink found by this name') != -1:
+        raise Exception(res[0])
+
+def move_sink_input(index, new_sink, set_volume=None):
+    Popen(
+        'pacmd move-sink-input %s %s' % (index, new_sink),
+        shell=True, stdout=PIPE)
+    if set_volume:
+        time.sleep(0.05)
+        set_input_volume(index, set_volume)
+
+def move_inputs_to_sink(index):
+    res = get_inputs()
+    Popen(
+        "pacmd set-default-sink %s" % (index),
+        shell=True, stdout=PIPE)
+    if not res['sink inputs']:
+        return
+
+    for k, v in res['sink inputs'].items():
+        move_sink_input(k, index, v['volume'])
 
 
 if __name__ == '__main__':

@@ -77,8 +77,6 @@ function update(){
         update_react();
         for (var i in pa_interface.data['sink indexes']){
             var index = pa_interface.data['sink indexes'][i];
-            // var el = document.getElementById('sink-range-' + index);
-            // el.value = pa_interface.get_sink_volume(index);
         }
     } catch (error){
         write_console(error.stack);

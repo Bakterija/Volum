@@ -15,9 +15,8 @@ class PulseAudioInterface{
                 if (this.status == 200) {
                 }
             }
-            console.log(this.responseText, this.status);
         }
-        let data = JSON.stringify({method: 'set_sink_volume', id: id, volume: 'volume'});
+        let data = JSON.stringify({method: 'set_sink_volume', id: id, value: volume});
         xhttp.open("POST", 'pa_control', true);
         xhttp.setRequestHeader('Content-Type', 'application/json');
         xhttp.send(data);

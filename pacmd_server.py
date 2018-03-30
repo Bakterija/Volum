@@ -3,6 +3,7 @@ from sys import argv
 import pacmd_handler
 import json
 import os
+import logging
 app = Flask(__name__)
 
 def file_get_contents(fpath, binary=False):
@@ -24,7 +25,12 @@ def get_pa_data():
 def pa_control():
     data = request.get_json()
     method = data.get('method', None)
-    # if method:
+    if method:
+        try:
+            pacmd_handler.set_sink_volume(data['id'], data['value'])
+        except Exception as e:
+            return str(e), 500
+    return ''
         
 
 @app.route("/")
@@ -33,8 +39,12 @@ def hello():
 
 if __name__ == '__main__':
     host = '0.0.0.0'
+
     if 'debug' in argv:
         app.debug = True
     if 'localhost' in argv:
         host = 'localhost'
+
+    # log = logging.getLogger('werkzeug')
+    # log.setLevel(logging.ERROR)
     app.run(host=host, port=5000, threaded=True)

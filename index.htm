@@ -158,8 +158,15 @@ class Slider2 extends React.Component {
         this.state = state;
     }
 
+    inputCallback(){
+        pa_interface.set_sink_volume(this.state.pa_id, this.state.value);
+    }
+
     onInput(event) {
         this.setState({value: event.target.value, last_input: Date.now()});
+        // clearTimeout(this.state.input_timer);
+        // this.state.input_timer = setTimeout(this.inputCallback.bind(this), 400);
+        pa_interface.set_sink_volume(this.state.pa_id, event.target.value);
     }
 
     onHold(event) {
@@ -168,7 +175,6 @@ class Slider2 extends React.Component {
 
     onRelease(event) {
         this.setState({is_held: false});
-        pa_interface.set_sink_volume(this.state.pa_id, this.state.volume);
     }
 
     render() {
