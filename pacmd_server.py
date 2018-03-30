@@ -1,6 +1,6 @@
 from flask import Flask, request
 from sys import argv
-import pacmd_parser
+import pacmd_handler
 import json
 import os
 app = Flask(__name__)
@@ -16,8 +16,8 @@ def file_get_contents(fpath, binary=False):
 @app.route('/pa_data.json')
 def get_pa_data():
     data = {}
-    data.update(pacmd_parser.get_sinks())
-    data.update(pacmd_parser.get_sink_inputs())
+    data.update(pacmd_handler.get_sinks())
+    data.update(pacmd_handler.get_sink_inputs())
     return json.dumps(data)
 
 @app.route('/pa_control', methods=['POST'])

@@ -36,17 +36,17 @@ class PulseAudioInterface{
     }
 
     update_sinks(callback=null){
-        var cmd = 'python3 pacmd_parser.py sink-inputs nice-format';
+        var cmd = 'python3 pacmd_handler.py sink-inputs nice-format';
         execute(cmd, this.pa_info_callback.bind(this));
     }
 
     update_sink_inputs(callback=null){
-        var cmd = 'python3 pacmd_parser.py sink-inputs';
+        var cmd = 'python3 pacmd_handler.py sink-inputs';
         execute(cmd, this.pa_info_callback.bind(this));
     }
 
     update_all(callback=null){
-        var cmd = 'python3 pacmd_parser.py sinks sink-inputs';
+        var cmd = 'python3 pacmd_handler.py sinks sink-inputs';
         if (callback){
             execute(cmd, this.DoubleCallback(callback));
         } else {
