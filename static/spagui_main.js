@@ -73,13 +73,13 @@ function init(){
 function update(){
     try{
         interval_counter += 1;
-        if (interval_counter == 5){
-            interval_counter = 0;
-            var el = document.getElementById('HA1');
-            el.innerHTML = "Update";
-        }
         pa_interface.update_all();
         update_react();
+        for (var i in pa_interface.data['sink indexes']){
+            var index = pa_interface.data['sink indexes'][i];
+            // var el = document.getElementById('sink-range-' + index);
+            // el.value = pa_interface.get_sink_volume(index);
+        }
     } catch (error){
         write_console(error.stack);
         throw(error);
@@ -110,6 +110,32 @@ function get_sink_name(sink_data){
     return ''
 }
 
+function sidebar_select(item, kwargs=null){
+    console.log('Sidebar select ' + item, kwargs);
+    content_render_state.pa_info = {};
+    if (item == 'all_sinks'){
+        content_render_state.pa_info.sinks = 'all';
+        content_render_state.pa_info.sink_inputs = [];
+    } else if (item == 'all_sink_inputs'){
+        content_render_state.pa_info.sinks = [];
+        content_render_state.pa_info.sink_inputs = 'all';
+    } else if (item == 'sink') {
+        content_render_state.pa_info.sinks = [kwargs.index];
+        content_render_state.pa_info.sink_inputs = [];
+    } else if (item == 'sink_input') {
+        content_render_state.pa_info.sinks = [];
+        content_render_state.pa_info.sink_inputs = [kwargs.index];
+    }
+    console.log(content_render_state.pa_info);
+    update_react()
+}
+
+content_render_state = {
+    pa_info: {
+        sinks: 'all',
+        sink_inputs: 'all'
+    }
+}
 window.onload = init;
 interval_counter = 0;
 window.onkeydown = on_key_down;

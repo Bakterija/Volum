@@ -7,6 +7,29 @@ class PulseAudioInterface{
         console.log('PulseAudioInterface: init')
     }
 
+    set_sink_volume(id, volume){
+        var xhttp = new XMLHttpRequest();
+        var pa_obj = this;
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4){
+                if (this.status == 200) {
+                }
+            }
+            console.log(this.responseText, this.status);
+        }
+        let data = JSON.stringify({method: 'set_sink_volume', id: id, volume: 'volume'});
+        xhttp.open("POST", 'pa_control', true);
+        xhttp.setRequestHeader('Content-Type', 'application/json');
+        xhttp.send(data);
+    }
+
+    get_sink_volume(id){
+        var val = this.data['sinks'][id]['volume']['front-left']['percent'];
+        val = val.replace(' ', '');
+        val = val.slice(0, val.length - 1);
+        return val;
+    }
+
     pa_info_callback(text){
         this.last_update = Date.now();
         this.data = JSON.parse(text);

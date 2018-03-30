@@ -15,6 +15,13 @@ class PulseAudioInterface{
         console.log('PulseAudioInterface: init')
     }
 
+    get_sink_volume(id){
+        var val = this.data['sinks'][id]['volume']['front-left']['percent'];
+        val = val.replace(' ', '');
+        val = val.slice(0, val.length - 1);
+        return val;
+    }
+
     pa_info_callback(text){
         this.last_update = Date.now();
         this.data = JSON.parse(text);

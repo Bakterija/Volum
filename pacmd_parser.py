@@ -71,36 +71,44 @@ def parseList(output):
             currentItem[parsedKey] = parsedValue
         elif lastKey and lastKey != 'ports':
             # If it gets to here, we can assume its a multiline attr
-            
-            # Split folume further
-            if (lastKey == 'volume'):
-                voldict = {}
-                text = currentItem[lastKey]
-                text = text.replace('\n', '/')
-                text = text.replace(' ', '/')
-                # aa = currentItem[lastKey].split(' ')
-                text = re.split(' / |\s|\n', currentItem[lastKey])
-                text = list(filter(None, text))
-                vol_i = 0
-                while vol_i < len(text):
-                    if (text[vol_i][-1] == ':'):
-                        vol_key = text[vol_i][:-1]
-                        voldict[vol_key] = {
-                            'value': text[vol_i+1],
-                            'percent': text[vol_i+2],
-                            'db': text[vol_i+3]
-                        }
-                        vol_i += 3
-                    if (text[vol_i] == 'balance'):
-                        voldict['balance'] = text[vol_i+1]
-                        vol_i += 1
-                    vol_i += 1
-                currentItem['volume'] = voldict
-            else:
-                currentItem[lastKey] += re.sub('^\s+', '\n', line)
+            currentItem[lastKey] += re.sub('^\s+', '\n', line)
 
     # Last item will need to be pushed manually
     data[currentIndex] = currentItem
+
+    # Update volume 
+    for k in data['sink indexes']:
+        currentItem = data[k]
+
+        cnt = currentItem['base volume'].count('/')
+        if cnt == 2:
+            currentItem['base volume items'] = ['value', 'percent', 'db']
+        elif cnt == 1:
+            currentItem['base volume items'] = ['value', 'percent']
+
+        voldict = {}
+        text = currentItem['volume']
+        text = text.replace('\n', '/')
+        text = text.replace(' ', '/')
+        text = re.split(' / |\s|\n', currentItem['volume'])
+        text = list(filter(None, text))
+        for i in range(len(text)):
+            if text[i][-1] == ',':
+                text[i] = text[i][:-1]
+        vol_i = 0
+        while vol_i < len(text):
+            if (text[vol_i][-1] == ':'):
+                vol_key = text[vol_i][:-1]
+                voldict[vol_key] = {}
+                for x in currentItem['base volume items']:
+                    voldict[vol_key][x] = text[vol_i+1]
+                    vol_i += 1
+            if (text[vol_i] == 'balance'):
+                voldict['balance'] = text[vol_i+1]
+                vol_i += 1
+            vol_i += 1
+            currentItem['volume'] = voldict
+
     return data
 
 

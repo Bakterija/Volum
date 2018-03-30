@@ -5,10 +5,7 @@
 <!-- <link rel="shortcut icon" href="/img/logo.png"> -->
 <link rel='stylesheet' href='static/w3.css'>
 <link rel='stylesheet' href='static/style.css'>
-<script src='static/spagui_main.js'></script>
-<script src='static/react.development.js'></script>
-<script src='static/react-dom.development.js'></script>
-<script src='static/babel.min.js'></script>
+<link rel="icon" href="/static/icon.ico">
 <title>sPAGUI3</title>
 </head>
 <body>
@@ -18,59 +15,100 @@
 
 <sidebar class='spagui-sidebar'>
     <div id='sidebar-sink-div'>
-        <button class='w3-button spagui-bar-item'>Sinks</button>
+        <button class='w3-button spagui-bar-item' onclick='sidebar_select("all_sinks")'>
+            Sinks
+        </button>
         <div id='sidebar-sink-subdiv'></div>
     </div>
 
     <div id='sidebar-input-div'>
-        <button class='w3-button spagui-bar-item'>Inputs</button>
+        <button class='w3-button spagui-bar-item' onclick='sidebar_select("all_sink_inputs")'>
+            Inputs
+        </button>
         <div id='sidebar-input-subdiv'></div>
     </div>
 </sidebar>
 
 <div id='content_div'>
-    <h1 id='HA1'>Init</h1>
-    
-    <span id='patest'></span>
-    <id id='react_test0'></id>
-    <id id='react_test'></id>
+    <!-- <div>
+        <h2 id='sink_content_title' hidden>Sinks:</h2>
 
-    <!-- <div class="slidecontainer">
-        <input type="range" min="1" max="100" value="50" 
-        class="slider" id="myRange">
+        <h2 id='sink_input_content_title' hidden>Sink inputs:</h2>
     </div> -->
+
+    <id id='react_content'></id>
 </div>
 
+<script src='static/react.development.js'></script>
+<script src='static/react-dom.development.js'></script>
+<script src='static/babel.min.js'></script>
+<script src='static/spagui_main.js'></script>
 <script type='text/babel'>
 function update_react(){
     if (pa_interface.data === null) return;
     update_sidebar_sinks_inputs()
-    const indexes = pa_interface.data['sink input indexes'];
-    var si = pa_interface.data['sink inputs'];
-    // write_console(indexes);
-    var sactive = pa_interface.data['active sink'];
-    var sk = pa_interface.data['sinks'][sactive];
+
+    var state = content_render_state.pa_info;
+    var sinks = pa_interface.data['sinks'];
+    var sink_inputs = pa_interface.data['sink inputs'];
+    // var sactive = pa_interface.data['active sink'];
+    // var sk = pa_interface.data['sinks'][sactive];
+    var render_sinks = [];
+    var render_sink_inputs = [];
+
+    if (state.sinks === 'all'){
+        render_sinks = pa_interface.data['sink indexes'];
+    } else {
+        render_sinks = state.sinks;
+    }
+    if (state.sink_inputs === 'all'){
+        render_sink_inputs = pa_interface.data['sink input indexes'];
+    } else {
+        render_sink_inputs = state.sink_inputs;
+    }
+
+    var render_elements = [];
+    if (render_sinks.length){
+        render_elements.push(
+            <h1 key='sink_title'>
+                Sinks:
+            </h1>);
+        
+        render_elements.push(
+            render_sinks.map((i) =>
+                <div key={'sink' + i} className='sink-div'>
+                    <li>Index: {i}</li>
+                    <li>Name: {get_sink_name(sinks[i])}</li>
+                    <li>Volume: {pa_interface.get_sink_volume(i)}</li>
+                    <Slider2 type='sink' pa_id={i}/>
+                </div>
+            )
+        );
+    }
+
+    if (render_sink_inputs.length){
+        render_elements.push(
+            <h1 key='sink_input_title'>
+                Sink inputs:
+            </h1>);
+
+        render_elements.push(
+            render_sink_inputs.map((i) =>
+                <div key={'sink-input' + i} className='sink-input-div'>
+                    <li>Index: {sink_inputs[i]['index']}</li>
+                    <li>Name: {a_or_b(
+                            sink_inputs[i]['app name'],
+                            sink_inputs[i]['media name'])}
+                    </li>
+                    <li>Volume: {sink_inputs[i]['volume']}</li>
+                    <li>Sink: {sink_inputs[i]['sink']}</li>
+                </div>)
+            );
+    }
 
     ReactDOM.render(
-        <div className='sink-div'>
-            <span>Sink: {sactive}</span>
-            <br/>
-            <span>Volume: {sk['volume']['front-left']['percent']}</span>
-        </div>,
-        document.getElementById('react_test0')
-    );
-
-    const listItems = indexes.map((i) =>
-        <div key={i} className='sink-input-div'>
-            <li>Index: {si[i]['index']}</li>
-            <li>Name: {a_or_b(si[i]['app name'], si[i]['media name'])}</li>
-            <li>Volume: {si[i]['volume']}</li>
-            <li>Sink: {si[i]['sink']}</li>
-        </div>
-    );
-    ReactDOM.render(
-        listItems,
-        document.getElementById('react_test')
+        render_elements,
+        document.getElementById('react_content')
     );
 }
 
@@ -80,7 +118,8 @@ function update_sidebar_sinks_inputs(){
     var sactive = pa_interface.data['active sink'];
     var sinks = pa_interface.data['sinks'];
     const listItems = indexes.map((i) =>
-        <button key={i} className='w3-button spagui-bar-subitem'>
+        <button key={i} className='w3-button spagui-bar-subitem'
+        onClick={fn => sidebar_select('sink', {index: i})}>
             {get_sink_name(sinks[i])}
         </button>
     );
@@ -102,6 +141,68 @@ function update_sidebar_sinks_inputs(){
         document.getElementById('sidebar-input-subdiv')
     );
 }
+
+class Slider2 extends React.Component {
+    constructor(props) {
+        super(props);
+        this.onInput = this.onInput.bind(this);
+        this.onMouseDown = this.onHold.bind(this);
+        this.onMouseUp = this.onRelease.bind(this);
+        this.onTouchStart = this.onHold.bind(this);
+        this.onTouchEnd = this.onRelease.bind(this);
+        var state = {is_held: false, last_input: 0, type: props['type']};
+        if (props['type'] == 'sink'){
+            state.pa_id = props['pa_id'];
+            state.id = 'sink-slider-' + props['pa_id'];
+        }
+        this.state = state;
+    }
+
+    onInput(event) {
+        this.setState({value: event.target.value, last_input: Date.now()});
+    }
+
+    onHold(event) {
+        this.setState({is_held: true});
+    }
+
+    onRelease(event) {
+        this.setState({is_held: false});
+        pa_interface.set_sink_volume(this.state.pa_id, this.state.volume);
+    }
+
+    render() {
+        if (this.state.last_input + 500 < Date.now()){
+            if (!this.state.is_held){
+                if (this.state.type == 'sink'){
+                    this.state.value = pa_interface.get_sink_volume(this.state.pa_id);
+                    let el = document.getElementById(this.state.id);
+                    if (el) el.value = this.state.value;
+                }
+            }
+        }
+        return (
+            <div className="slidecontainer">
+                <label>{this.state.klik} {this.state.value}</label>
+                <input type="range" min="1" max="100" defaultValue="50"
+                id={this.state.id}
+                className="slider" onInput={this.onInput}
+                onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp}
+                onTouchStart={this.onMouseUp} onTouchEnd={this.onMouseUp}>
+                </input>
+            </div>
+        );
+    }
+}
+Slider2.defaultProps = {
+    is_held: false,
+    pa_id: null,
+    type: null,
+    value: '100',
+    id: ''
+}
+
+
 </script>
 </body>
 </html>

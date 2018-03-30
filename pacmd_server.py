@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from sys import argv
 import pacmd_parser
 import json
@@ -20,6 +20,13 @@ def get_pa_data():
     data.update(pacmd_parser.get_sink_inputs())
     return json.dumps(data)
 
+@app.route('/pa_control', methods=['POST'])
+def pa_control():
+    data = request.get_json()
+    method = data.get('method', None)
+    # if method:
+        
+
 @app.route("/")
 def hello():
     return file_get_contents('index.htm')
@@ -30,4 +37,4 @@ if __name__ == '__main__':
         app.debug = True
     if 'localhost' in argv:
         host = 'localhost'
-    app.run(host=host, port=5000)
+    app.run(host=host, port=5000, threaded=True)
