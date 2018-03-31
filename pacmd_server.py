@@ -1,10 +1,12 @@
 from flask import Flask, request
+from time import time
 from sys import argv
 import pacmd_handler
 import json
 import os
 import logging
 app = Flask(__name__)
+T0 = time()
 
 def file_get_contents(fpath, binary=False):
     if binary:
@@ -25,11 +27,12 @@ def get_pa_data():
 def pa_control():
     data = request.get_json()
     method = data.get('method', None)
-    if method:
-        try:
-            pacmd_handler.set_sink_volume(data['id'], data['value'])
-        except Exception as e:
-            return str(e), 500
+    # print(request.__dict__)
+    print('%s  /pa_control: %s' % (request.environ['REMOTE_ADDR'], data))
+    if method == 'set_sin_volume':
+        pacmd_handler.set_sink_volume(data['id'], data['value'])
+    elif method == 'set_input_volume':
+        pacmd_handler.set_input_volume(data['id'], data['value'])
     return ''
         
 

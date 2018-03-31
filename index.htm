@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- <link rel="shortcut icon" href="/img/logo.png"> -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel='stylesheet' href='static/w3.css'>
 <link rel='stylesheet' href='static/style.css'>
 <link rel="icon" href="/static/icon.ico">
@@ -80,7 +81,7 @@ function update_react(){
                     <li>Index: {i}</li>
                     <li>Name: {get_sink_name(sinks[i])}</li>
                     <li>Volume: {pa_interface.get_sink_volume(i)}</li>
-                    <Slider2 type='sink' pa_id={i}/>
+                    <SPAGUI_Slider type='sink' pa_id={i}/>
                 </div>
             )
         );
@@ -102,6 +103,7 @@ function update_react(){
                     </li>
                     <li>Volume: {sink_inputs[i]['volume']}</li>
                     <li>Sink: {sink_inputs[i]['sink']}</li>
+                    <SPAGUI_Slider type='input' pa_id={i}/>
                 </div>)
             );
     }
@@ -132,7 +134,8 @@ function update_sidebar_sinks_inputs(){
     indexes = pa_interface.data['sink input indexes'];
     var inputs = pa_interface.data['sink inputs'];
     const listItems2 = indexes.map((i) =>
-        <button key={i} className='w3-button spagui-bar-subitem'>
+        <button key={i} className='w3-button spagui-bar-subitem'
+        onClick={fn => sidebar_select('sink_input', {index: i})}>
             {a_or_b(inputs[i]['app name'], inputs[i]['media name'])}
         </button>
     );
@@ -142,7 +145,7 @@ function update_sidebar_sinks_inputs(){
     );
 }
 
-class Slider2 extends React.Component {
+class SPAGUI_Slider extends React.Component {
     constructor(props) {
         super(props);
         this.onInput = this.onInput.bind(this);
@@ -150,11 +153,10 @@ class Slider2 extends React.Component {
         this.onMouseUp = this.onRelease.bind(this);
         this.onTouchStart = this.onHold.bind(this);
         this.onTouchEnd = this.onRelease.bind(this);
-        var state = {is_held: false, last_input: 0, type: props['type']};
-        if (props['type'] == 'sink'){
-            state.pa_id = props['pa_id'];
-            state.id = 'sink-slider-' + props['pa_id'];
-        }
+        var state = {
+            is_held: false, last_input: 0, type: props['type'],
+            pa_id: props['pa_id'], id: props['type'] + '-slider-' + props['pa_id']
+        };
         this.state = state;
     }
 
@@ -166,7 +168,11 @@ class Slider2 extends React.Component {
         this.setState({value: event.target.value, last_input: Date.now()});
         // clearTimeout(this.state.input_timer);
         // this.state.input_timer = setTimeout(this.inputCallback.bind(this), 400);
-        pa_interface.set_sink_volume(this.state.pa_id, event.target.value);
+        if (this.state.type == 'sink'){
+            pa_interface.set_sink_volume(this.state.pa_id, event.target.value);
+        } else if (this.state.type == 'input'){
+            pa_interface.set_input_volume(this.state.pa_id, event.target.value);
+        }
     }
 
     onHold(event) {
@@ -184,23 +190,27 @@ class Slider2 extends React.Component {
                     this.state.value = pa_interface.get_sink_volume(this.state.pa_id);
                     let el = document.getElementById(this.state.id);
                     if (el) el.value = this.state.value;
+                } else if (this.state.type == 'input'){
+                    this.state.value = pa_interface.get_input_volume(this.state.pa_id);
+                    let el = document.getElementById(this.state.id);
+                    if (el) el.value = this.state.value;
                 }
             }
         }
         return (
             <div className="slidecontainer">
                 <label>{this.state.klik} {this.state.value}</label>
-                <input type="range" min="1" max="100" defaultValue="50"
+                <input type="range" min="1" max="100"
                 id={this.state.id}
                 className="slider" onInput={this.onInput}
                 onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp}
-                onTouchStart={this.onMouseUp} onTouchEnd={this.onMouseUp}>
+                onTouchStart={this.onMouseDown} onTouchEnd={this.onMouseUp}>
                 </input>
             </div>
         );
     }
 }
-Slider2.defaultProps = {
+SPAGUI_Slider.defaultProps = {
     is_held: false,
     pa_id: null,
     type: null,

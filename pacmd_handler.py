@@ -204,10 +204,9 @@ def get_sink_inputs():
     return result
 
 def set_input_volume(index, volume):
-    volume = volume * 655
-    Popen(
-        'pacmd set-sink-input-volume %s %s' % (index, volume),
-        shell=True, stdout=PIPE)
+    volume = int(volume) * 655
+    cmd = ['pacmd', 'set-sink-input-volume', str(index), str(volume)]
+    res = shell_exec(cmd)
 
 def set_sink_volume(index, volume):
     volume = int(volume) * 655

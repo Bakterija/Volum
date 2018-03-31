@@ -1,12 +1,6 @@
 console.log('Loading spagui_server.js');
 
-class PulseAudioInterface{
-    constructor(){
-        this.data = null;
-        this.last_update = Date.now();
-        console.log('PulseAudioInterface: init')
-    }
-
+class PulseAudioInterfaceServer extends PulseAudioInterface{
     set_sink_volume(id, volume){
         var xhttp = new XMLHttpRequest();
         var pa_obj = this;
@@ -19,30 +13,29 @@ class PulseAudioInterface{
         let data = JSON.stringify({method: 'set_sink_volume', id: id, value: volume});
         xhttp.open("POST", 'pa_control', true);
         xhttp.setRequestHeader('Content-Type', 'application/json');
+        super.set_sink_volume(id, volume);
         xhttp.send(data);
     }
 
-    get_sink_volume(id){
-        var val = this.data['sinks'][id]['volume']['front-left']['percent'];
-        val = val.replace(' ', '');
-        val = val.slice(0, val.length - 1);
-        return val;
-    }
-
-    pa_info_callback(text){
-        this.last_update = Date.now();
-        this.data = JSON.parse(text);
-    }
-
-    DoubleCallback(callback) {
-        var obj = this;
-        return function(text){
-            obj.pa_info_callback(text);
-            callback(text);
+    set_input_volume(id, volume){
+        var xhttp = new XMLHttpRequest();
+        var pa_obj = this;
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4){
+                if (this.status == 200) {
+                }
+            }
         }
+        let data = JSON.stringify({method: 'set_input_volume', id: id, value: volume});
+        xhttp.open("POST", 'pa_control', true);
+        xhttp.setRequestHeader('Content-Type', 'application/json');
+        super.set_input_volume(id, volume);
+        xhttp.send(data);
     }
 
     update_all(callback=null){
+        if (this.is_updating) return;
+
         var xhttp = new XMLHttpRequest();
         var pa_obj = this;
         xhttp.onreadystatechange = function() {
@@ -54,5 +47,6 @@ class PulseAudioInterface{
         }
         xhttp.open("GET", 'pa_data.json', true);
         xhttp.send();
+        this.is_updating = true;
     }
 }

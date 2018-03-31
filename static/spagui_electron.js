@@ -8,41 +8,24 @@ function execute(command, callback){
     })
 }
 
-class PulseAudioInterface{
-    constructor(){
-        this.data = null;
-        this.last_update = Date.now();
-        console.log('PulseAudioInterface: init')
+class PulseAudioInterfaceElectron extends PulseAudioInterface{
+    init(){
+
     }
 
-    get_sink_volume(id){
-        var val = this.data['sinks'][id]['volume']['front-left']['percent'];
-        val = val.replace(' ', '');
-        val = val.slice(0, val.length - 1);
-        return val;
+    set_sink_volume_callback(text){
     }
 
-    pa_info_callback(text){
-        this.last_update = Date.now();
-        this.data = JSON.parse(text);
+    set_input_volume(id, volume){
+        var cmd = 'pacmd set-input-volume ' + id + ' ' + volume * 655;
+        execute(cmd, this.set_sink_volume_callback.bind(this));
+        super.set_input_volume(id, volume);
     }
 
-    DoubleCallback(callback) {
-        var obj = this;
-        return function(text){
-            obj.pa_info_callback(text);
-            callback(text);
-        }
-    }
-
-    update_sinks(callback=null){
-        var cmd = 'python3 pacmd_handler.py sink-inputs nice-format';
-        execute(cmd, this.pa_info_callback.bind(this));
-    }
-
-    update_sink_inputs(callback=null){
-        var cmd = 'python3 pacmd_handler.py sink-inputs';
-        execute(cmd, this.pa_info_callback.bind(this));
+    set_sink_volume(id, volume){
+        var cmd = 'pacmd set-sink-volume ' + id + ' ' + volume * 655;
+        execute(cmd, this.set_sink_volume_callback.bind(this));
+        super.set_sink_volume(id, volume);
     }
 
     update_all(callback=null){

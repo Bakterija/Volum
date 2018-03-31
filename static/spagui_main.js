@@ -4,11 +4,67 @@ function load_js(url){
     document.head.appendChild(script);
 }
 
+console.log('Loading spagui_server.js');
+
+class PulseAudioInterface{
+    constructor(){
+        this.is_updating = false;
+        this.data = null;
+        this.last_update = Date.now();
+        console.log('PulseAudioInterface: init')
+    }
+
+    warn_not_implemented(func_name){
+        console.warn('PulseAudioInteface: ' + func_name +  ': not implemented');
+    }
+
+    DoubleCallback(callback) {
+        var obj = this;
+        return function(text){
+            obj.pa_info_callback(text);
+            callback(text);
+        }
+    }
+
+    pa_info_callback(text){
+        this.last_update = Date.now();
+        this.data = JSON.parse(text);
+        this.is_updating = false;
+    }
+
+    get_sink_volume(id){
+        var val = this.data['sinks'][id]['volume']['front-left']['percent'];
+        val = val.replace(' ', '');
+        val = val.replace('%', '');
+        // val = val.slice(0, val.length - 1);
+        return val;
+    }
+
+    get_input_volume(id){
+        var val = this.data['sink inputs'][id]['volume'];
+        return val;
+    }
+
+    set_sink_volume(id, volume){
+        this.data['sinks'][id]['volume']['front-left']['percent'] = volume;
+        console.log("SETT", volume);
+    }
+
+    set_input_volume(id, volume){
+        var val = this.data['sink inputs'][id]['volume'] = volume;
+    }
+
+    update_all(callback=null){
+        this.warn_not_implemented('update_all');
+    }
+}
+
+IS_ELECTRON = false;
 if (navigator.userAgent.search('Electron') == -1){
-    const IS_ELECTRON = false;
+    IS_ELECTRON = false;
     load_js('static/spagui_server.js');
 } else {
-    const IS_ELECTRON = true;
+    IS_ELECTRON = true;
     load_js('static/spagui_electron.js');
 }
 
@@ -65,7 +121,11 @@ function init(){
     var navstartevent = window.performance.timing.navigationStart;
     var loadTime = loadevent - navstartevent;
     write_console('Page rendered: in ' + loadTime + 'ms');
-    pa_interface = new PulseAudioInterface();
+    if (IS_ELECTRON){
+        pa_interface = new PulseAudioInterfaceElectron();
+    } else {
+        pa_interface = new PulseAudioInterfaceServer();
+    }
     pa_interface.update_all(function(text){console.log(text);});
     window.setInterval(update, 200);
 }
@@ -74,6 +134,9 @@ function update(){
     try{
         interval_counter += 1;
         pa_interface.update_all();
+        if (!pa_interface.data){
+            return;
+        }
         update_react();
         for (var i in pa_interface.data['sink indexes']){
             var index = pa_interface.data['sink indexes'][i];
