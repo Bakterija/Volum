@@ -89,7 +89,7 @@ function update_react(){
             render_sinks.map((i) =>
                 <div key={'sink' + i} className='sink-div'>
                     <SinkIndexLi sink_id={i}/>
-                    <li>Name: {get_sink_name(sinks[i])}</li>
+                    <li>Name: {pa_interface.get_sink_name(i)}</li>
                     <li>Volume: {pa_interface.get_sink_volume(i)}</li>
                     <SPAGUI_Slider type='sink' pa_id={i}/>
                     <button onClick={x => pa_interface.set_default_sink(i)}
@@ -116,10 +116,7 @@ function update_react(){
             render_sink_inputs.map((i) =>
                 <div key={'sink-input' + i} className='sink-input-div'>
                     <li>Index: {sink_inputs[i]['index']}</li>
-                    <li>Name: {a_or_b(
-                            sink_inputs[i]['app name'],
-                            sink_inputs[i]['media name'])}
-                    </li>
+                    <li>Name: {pa_interface.get_input_name(i, false)}</li>
                     <li>Volume: {sink_inputs[i]['volume']}</li>
                     <li>Sink: {sink_inputs[i]['sink']}</li>
                     <SPAGUI_Slider type='input' pa_id={i}/>
@@ -141,7 +138,7 @@ function update_sidebar_sinks_inputs(){
     const listItems = indexes.map((i) =>
         <button key={i} className='w3-button spagui-bar-subitem'
         onClick={fn => sidebar_select('sink', {index: i})}>
-            {get_sink_name(sinks[i])}
+            {pa_interface.get_sink_name(i)}
         </button>
     );
     ReactDOM.render(
@@ -155,7 +152,7 @@ function update_sidebar_sinks_inputs(){
     const listItems2 = indexes.map((i) =>
         <button key={i} className='w3-button spagui-bar-subitem'
         onClick={fn => sidebar_select('sink_input', {index: i})}>
-            {a_or_b(inputs[i]['app name'], inputs[i]['media name'])}
+            {pa_interface.get_input_name(i)}
         </button>
     );
     ReactDOM.render(

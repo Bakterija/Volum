@@ -14,6 +14,38 @@ class PulseAudioInterface{
         console.log('PulseAudioInterface: init')
     }
 
+    get_sink_name(sink_id){
+        var sink_data = this.data['sinks'][sink_id];
+        var has_properties = sink_data.hasOwnProperty('properties');
+        if (has_properties){
+            if (sink_data.properties.hasOwnProperty('alsa.card_name')){
+                return sink_data['properties']['alsa.card_name'];
+            }
+            if (sink_data.properties.hasOwnProperty('device.ladspa.name')){
+                return sink_data['properties']['device.ladspa.name'];
+            }
+        }
+        return ''
+    }
+
+    get_input_name(input_id, unique=true){
+        var data = this.data['sink inputs'][input_id];
+        var ret = '';
+        if (data['app name']){
+            ret = data['app name'];
+        } else {
+            ret = data['media name']
+        }
+
+        if (unique){
+            var nlist = this.data['sink input indexes'].map(x => this.get_input_name(x, false));
+            if (nlist.indexOf(ret)){
+                ret += ' (' + data['index'] + ')';
+            }
+        }
+        return ret;
+    }
+
     warn_not_implemented(func_name){
         console.warn('PulseAudioInteface: ' + func_name +  ': not implemented');
     }
@@ -174,19 +206,6 @@ function a_or_b(a, b){
         return a;
     }
     return b;
-}
-
-function get_sink_name(sink_data){
-    var has_properties = sink_data.hasOwnProperty('properties');
-    if (has_properties){
-        if (sink_data.properties.hasOwnProperty('alsa.card_name')){
-            return sink_data['properties']['alsa.card_name'];
-        }
-        if (sink_data.properties.hasOwnProperty('device.ladspa.name')){
-            return sink_data['properties']['device.ladspa.name'];
-        }
-    }
-    return ''
 }
 
 function sidebar_select(item, kwargs=null){
