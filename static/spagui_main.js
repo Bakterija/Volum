@@ -47,11 +47,18 @@ class PulseAudioInterface{
 
     set_sink_volume(id, volume){
         this.data['sinks'][id]['volume']['front-left']['percent'] = volume;
-        console.log("SETT", volume);
     }
 
     set_input_volume(id, volume){
         var val = this.data['sink inputs'][id]['volume'] = volume;
+    }
+
+    set_default_sink(id){
+        this.warn_not_implemented('set_default_sink');
+    }
+
+    move_all_inputs(id){
+        this.warn_not_implemented('move_inputs');
     }
 
     update_all(callback=null){
@@ -136,7 +143,18 @@ function update(){
         pa_interface.update_all();
         if (!pa_interface.data){
             return;
+        } 
+
+        if (gui_is_hidden){
+            document.getElementById('content_div').style.visibility = 'visible';
+            document.getElementById('content_div').style.display = 'block';
+            document.getElementById('spagui-sidebar').style.visibility = 'visible';
+            document.getElementById('spagui-sidebar').style.display = 'block';
+            let el = document.getElementById('spagui-load-spinner');
+            el.parentNode.removeChild(el);
+            gui_is_hidden = false;
         }
+
         update_react();
         for (var i in pa_interface.data['sink indexes']){
             var index = pa_interface.data['sink indexes'][i];
@@ -197,6 +215,8 @@ content_render_state = {
         sink_inputs: 'all'
     }
 }
+
+gui_is_hidden = true;
 window.onload = init;
 interval_counter = 0;
 window.onkeydown = on_key_down;

@@ -216,12 +216,12 @@ def set_sink_volume(index, volume):
         raise Exception(res[0])
 
 def move_sink_input(index, new_sink, set_volume=None):
-    Popen(
-        'pacmd move-sink-input %s %s' % (index, new_sink),
-        shell=True, stdout=PIPE)
-    if set_volume:
-        time.sleep(0.05)
-        set_input_volume(index, set_volume)
+    cmd = ['pacmd', 'move-sink-input', str(index), str(new_sink)]
+    out, err = shell_exec(cmd)
+    if err:
+        return err
+    else:
+        return out
 
 def move_inputs_to_sink(index):
     res = get_inputs()

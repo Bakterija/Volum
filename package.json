@@ -2,6 +2,7 @@
     "name": "spagui",
     "version": "3.0.0",
     "main": "main.js",
+    "icon": "static/icon.ico",
     "scripts": {
         "start": "electron .",
         "start-nogpu": "electron . --disable-gpu --force-cpu-draw"

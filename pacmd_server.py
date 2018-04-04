@@ -29,10 +29,12 @@ def pa_control():
     method = data.get('method', None)
     # print(request.__dict__)
     print('%s  /pa_control: %s' % (request.environ['REMOTE_ADDR'], data))
-    if method == 'set_sin_volume':
+    if method == 'set_sink_volume':
         pacmd_handler.set_sink_volume(data['id'], data['value'])
     elif method == 'set_input_volume':
         pacmd_handler.set_input_volume(data['id'], data['value'])
+    elif method == 'move_sink_input':
+        res = pacmd_handler.move_sink_input(data['input_id'], data['sink_id'])
     return ''
         
 

@@ -1,4 +1,4 @@
-const {app, BrowserWindow, globalShortcut} = require('electron')
+const {clipboard, Tray, app, BrowserWindow, nativeImage, globalShortcut} = require('electron')
 const path = require('path')
 const url = require('url')
 
@@ -10,9 +10,20 @@ function on_escape(){
     app.quit();
 }
 
+function print(text){
+    process.stdout.write(text);
+    process.stdout.write('\n');
+}
+
 function createWindow () {
     // Create the browser window.
-    win = new BrowserWindow({width: 600, height: 400})
+    ico_path = __dirname + '/static/icon.ico';
+    var icon44 = nativeImage.createFromPath(ico_path);
+
+    win = new BrowserWindow({
+        width: 600, height: 400, icon: icon44
+    })
+    print(ico_path);
 
     // and load the index.html of the app.
     win.loadURL(url.format({

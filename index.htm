@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<!-- <link rel="shortcut icon" href="/img/logo.png"> -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel='stylesheet' href='static/w3.css'>
 <link rel='stylesheet' href='static/style.css'>
 <link rel="icon" href="/static/icon.ico">
@@ -14,7 +14,9 @@
     <span id='cmsg' hidden class='console_message'></span>
 </div>
 
-<sidebar class='spagui-sidebar'>
+<div id='spagui-load-spinner' class='spagui-load-spinner top-border-red'></div>
+
+<sidebar id='spagui-sidebar' hidden>
     <div id='sidebar-sink-div'>
         <button class='w3-button spagui-bar-item' onclick='sidebar_select("all_sinks")'>
             Sinks
@@ -30,7 +32,7 @@
     </div>
 </sidebar>
 
-<div id='content_div'>
+<div id='content_div' hidden>
     <!-- <div>
         <h2 id='sink_content_title' hidden>Sinks:</h2>
 
@@ -75,13 +77,30 @@ function update_react(){
                 Sinks:
             </h1>);
         
+        function SinkIndexLi(props){
+            if (props.sink_id == pa_interface.data['active sink']){
+                return <li>*Index: {props.sink_id}</li>;
+            } else {
+                return <li>Index: {props.sink_id}</li>;
+            }
+        }
+
         render_elements.push(
             render_sinks.map((i) =>
                 <div key={'sink' + i} className='sink-div'>
-                    <li>Index: {i}</li>
+                    <SinkIndexLi sink_id={i}/>
                     <li>Name: {get_sink_name(sinks[i])}</li>
                     <li>Volume: {pa_interface.get_sink_volume(i)}</li>
                     <SPAGUI_Slider type='sink' pa_id={i}/>
+                    <button onClick={x => pa_interface.set_default_sink(i)}
+                    className='w3-button w3-blue'>
+                        Set default
+                    </button>
+
+                    <button onClick={x => pa_interface.move_all_inputs(i)}
+                    className='w3-button w3-blue w3-margin-left'>
+                        Move inputs
+                    </button>
                 </div>
             )
         );
@@ -198,14 +217,12 @@ class SPAGUI_Slider extends React.Component {
             }
         }
         return (
-            <div className="slidecontainer">
-                <label>{this.state.klik} {this.state.value}</label>
+            <div className="spagui-slidecontainer">
                 <input type="range" min="1" max="100"
                 id={this.state.id}
-                className="slider" onInput={this.onInput}
+                className="spagui-slider" onInput={this.onInput}
                 onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp}
-                onTouchStart={this.onMouseDown} onTouchEnd={this.onMouseUp}>
-                </input>
+                onTouchStart={this.onMouseDown} onTouchEnd={this.onMouseUp}/>
             </div>
         );
     }
